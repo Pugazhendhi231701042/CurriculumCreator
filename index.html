@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Curriculum Syllabus Creator | Professional Academic Syllabus Generator</title>
+    <meta name="description" content="A premium single-page web application to create, customize, and generate professional Microsoft Word (.docx) course syllabi.">
+    <!-- Google Fonts: Outfit and Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+    <!-- docx.js Library (IIFE Version for Browser) -->
+    <script src="https://cdn.jsdelivr.net/npm/docx@8.2.4/build/index.iife.js"></script>
+    <!-- SheetJS Library to read/write Excel in the browser -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="glow-bg"></div>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="logo">
+                <span class="logo-icon">📚</span>
+                <h1>Curriculum Creator</h1>
+            </div>
+            <p class="subtitle">Design comprehensive, structured academic syllabi and export them directly to professional Microsoft Word documents.</p>
+        </header>
+
+        <main>
+            <form id="syllabusForm" class="syllabus-form" novalidate>
+                <!-- 0. Quick Syllabus Auto-Detect Parser -->
+                <section class="card quick-parser-card" style="border: 1px solid var(--primary-glow); background: rgba(var(--primary-rgb), 0.05);">
+                    <div class="card-header">
+                        <span class="step-num">⚡</span>
+                        <h2>Quick Paste Syllabus Parser</h2>
+                    </div>
+                    <p class="section-desc">Have an existing syllabus text? Paste the entire syllabus page content here and click "Auto-Detect" to instantly parse and populate all form fields below.</p>
+                    
+                    <div class="form-group col-span-4" style="margin-top: 1rem;">
+                        <textarea id="quickPasteArea" rows="6" placeholder="Paste the entire syllabus content here (e.g. Course Code, Title, Category, L-T-P-C, Objectives, Units, Outcomes, Books, Suggested Evaluations, etc.)..." style="width: 100%; font-family: 'Courier New', Courier, monospace; font-size: 0.9rem; padding: 0.75rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); background: rgba(10,15,30,0.6); color: #fff; line-height: 1.4;"></textarea>
+                    </div>
+                    <div class="button-group flex-end" style="margin-top: 1rem;">
+                        <button type="button" class="btn btn-primary btn-icon" id="btnQuickParse">
+                            <span class="icon">🚀</span> Auto-Detect & Populate Form
+                        </button>
+                    </div>
+                </section>
+
+                <!-- 1. Course Type Selection -->
+                <section class="card select-type-card">
+                    <div class="card-header">
+                        <span class="step-num">01</span>
+                        <h2>Course Classification</h2>
+                    </div>
+                    <div class="form-group select-wrapper">
+                        <label for="courseType">Select Course Type <span class="required">*</span></label>
+                        <select id="courseType" name="courseType" required>
+                            <option value="Theory" selected>Theory</option>
+                            <option value="Lab">Lab</option>
+                            <option value="Lab Oriented Theory">Lab Oriented Theory</option>
+                        </select>
+                        <span class="helper-text">This will dynamically structure the syllabus requirements below.</span>
+                    </div>
+                    
+                    <div class="excel-utility-section">
+                        <label class="excel-section-label">Excel Data Transfer Utility</label>
+                        <div class="excel-actions">
+                            <button type="button" class="btn btn-secondary btn-icon" id="downloadTemplateBtn">
+                                <span class="icon">📥</span> Download Template (.xlsx)
+                            </button>
+                            <label for="excelUpload" class="btn btn-secondary btn-icon btn-upload-label">
+                                <span class="icon">📤</span> Upload Excel File
+                                <input type="file" id="excelUpload" accept=".xlsx, .xls" style="display: none;">
+                            </label>
+                        </div>
+                        <p class="helper-text excel-helper">Select a course type first, then download its Excel template. Fill it out and upload to auto-populate all fields.</p>
+                    </div>
+                </section>
+
+                <!-- 2. Basic Course Information -->
+                <section class="card">
+                    <div class="card-header">
+                        <span class="step-num">02</span>
+                        <h2>Basic Course Information</h2>
+                    </div>
+                    <div class="grid-layout">
+                        <div class="form-group">
+                            <label for="subjectCode">Subject Code <span class="required">*</span></label>
+                            <input type="text" id="subjectCode" name="subjectCode" placeholder="e.g. CS301" required>
+                        </div>
+                        <div class="form-group col-span-2">
+                            <label for="subjectName">Subject Name <span class="required">*</span></label>
+                            <input type="text" id="subjectName" name="subjectName" placeholder="e.g. Data Structures and Algorithms" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="category">Category <span class="required">*</span></label>
+                            <input type="text" id="category" name="category" placeholder="e.g. PC (Professional Core)" required>
+                        </div>
+                        
+                        <div class="form-group credit-input">
+                            <label for="lValue">L (Lecture) <span class="required">*</span></label>
+                            <input type="number" id="lValue" name="lValue" min="0" value="3" required>
+                        </div>
+                        <div class="form-group credit-input">
+                            <label for="tValue">T (Tutorial) <span class="required">*</span></label>
+                            <input type="number" id="tValue" name="tValue" min="0" value="0" required>
+                        </div>
+                        <div class="form-group credit-input">
+                            <label for="pValue">P (Practical) <span class="required">*</span></label>
+                            <input type="number" id="pValue" name="pValue" min="0" value="0" required>
+                        </div>
+                        <div class="form-group credit-input">
+                            <label for="cValue">C (Credits) <span class="required">*</span></label>
+                            <input type="number" id="cValue" name="cValue" min="0" value="3" required>
+                        </div>
+
+                        <div class="form-group col-span-4">
+                            <label for="branches">Branch(es) <span class="required">*</span></label>
+                            <input type="text" id="branches" name="branches" placeholder="e.g. Computer Science and Engineering, Information Technology" required>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. Objectives -->
+                <section class="card">
+                    <div class="card-header">
+                        <span class="step-num">03</span>
+                        <h2>Course Objectives</h2>
+                    </div>
+                    <p class="section-desc">Outline what the course intends to accomplish.</p>
+                    
+                    <div id="objectivesContainer" class="dynamic-list-container">
+                        <!-- Dynamic inputs will be inserted here -->
+                    </div>
+                    
+                    <div class="button-group flex-end">
+                        <button type="button" class="btn btn-secondary btn-icon" id="addObjectiveBtn">
+                            <span class="icon">+</span> Add Objective
+                        </button>
+                        <button type="button" class="btn btn-danger btn-icon" id="removeObjectiveBtn">
+                            <span class="icon">-</span> Remove Objective
+                        </button>
+                    </div>
+                </section>
+
+                <!-- 4. Theory Course (Unit I - V Section) -->
+                <section id="theorySection" class="card conditional-section">
+                    <div class="card-header">
+                        <span class="step-num">04</span>
+                        <h2>Theory Syllabus (Units I - V)</h2>
+                    </div>
+                    
+                    <div class="units-container">
+                        <!-- Unit I -->
+                        <div class="unit-card">
+                            <div class="unit-header">
+                                <h3>Unit I</h3>
+                            </div>
+                            <div class="unit-grid">
+                                <div class="form-group col-span-3">
+                                    <label for="unit1Title">Unit Title <span class="required">*</span></label>
+                                    <input type="text" id="unit1Title" name="unit1Title" placeholder="e.g. Introduction to Algorithms" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="unit1Hours">Contact Hours <span class="required">*</span></label>
+                                    <input type="number" id="unit1Hours" name="unit1Hours" class="unit-hours-input" min="0" placeholder="e.g. 9" required>
+                                </div>
+                                <div class="form-group col-span-4">
+                                    <label for="unit1Syllabus">Syllabus Details <span class="required">*</span></label>
+                                    <textarea id="unit1Syllabus" name="unit1Syllabus" rows="4" placeholder="Enter syllabus details for Unit I..." required></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Unit II -->
+                        <div class="unit-card">
+                            <div class="unit-header">
+                                <h3>Unit II</h3>
+                            </div>
+                            <div class="unit-grid">
+                                <div class="form-group col-span-3">
+                                    <label for="unit2Title">Unit Title <span class="required">*</span></label>
+                                    <input type="text" id="unit2Title" name="unit2Title" placeholder="e.g. Elementary Data Structures" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="unit2Hours">Contact Hours <span class="required">*</span></label>
+                                    <input type="number" id="unit2Hours" name="unit2Hours" class="unit-hours-input" min="0" placeholder="e.g. 9" required>
+                                </div>
+                                <div class="form-group col-span-4">
+                                    <label for="unit2Syllabus">Syllabus Details <span class="required">*</span></label>
+                                    <textarea id="unit2Syllabus" name="unit2Syllabus" rows="4" placeholder="Enter syllabus details for Unit II..." required></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Unit III -->
+                        <div class="unit-card">
+                            <div class="unit-header">
+                                <h3>Unit III</h3>
+                            </div>
+                            <div class="unit-grid">
+                                <div class="form-group col-span-3">
+                                    <label for="unit3Title">Unit Title <span class="required">*</span></label>
+                                    <input type="text" id="unit3Title" name="unit3Title" placeholder="e.g. Trees and Graphs" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="unit3Hours">Contact Hours <span class="required">*</span></label>
+                                    <input type="number" id="unit3Hours" name="unit3Hours" class="unit-hours-input" min="0" placeholder="e.g. 9" required>
+                                </div>
+                                <div class="form-group col-span-4">
+                                    <label for="unit3Syllabus">Syllabus Details <span class="required">*</span></label>
+                                    <textarea id="unit3Syllabus" name="unit3Syllabus" rows="4" placeholder="Enter syllabus details for Unit III..." required></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Unit IV -->
+                        <div class="unit-card">
+                            <div class="unit-header">
+                                <h3>Unit IV</h3>
+                            </div>
+                            <div class="unit-grid">
+                                <div class="form-group col-span-3">
+                                    <label for="unit4Title">Unit Title <span class="required">*</span></label>
+                                    <input type="text" id="unit4Title" name="unit4Title" placeholder="e.g. Sorting and Searching" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="unit4Hours">Contact Hours <span class="required">*</span></label>
+                                    <input type="number" id="unit4Hours" name="unit4Hours" class="unit-hours-input" min="0" placeholder="e.g. 9" required>
+                                </div>
+                                <div class="form-group col-span-4">
+                                    <label for="unit4Syllabus">Syllabus Details <span class="required">*</span></label>
+                                    <textarea id="unit4Syllabus" name="unit4Syllabus" rows="4" placeholder="Enter syllabus details for Unit IV..." required></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Unit V -->
+                        <div class="unit-card">
+                            <div class="unit-header">
+                                <h3>Unit V</h3>
+                            </div>
+                            <div class="unit-grid">
+                                <div class="form-group col-span-3">
+                                    <label for="unit5Title">Unit Title <span class="required">*</span></label>
+                                    <input type="text" id="unit5Title" name="unit5Title" placeholder="e.g. Algorithm Design Techniques" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="unit5Hours">Contact Hours <span class="required">*</span></label>
+                                    <input type="number" id="unit5Hours" name="unit5Hours" class="unit-hours-input" min="0" placeholder="e.g. 9" required>
+                                </div>
+                                <div class="form-group col-span-4">
+                                    <label for="unit5Syllabus">Syllabus Details <span class="required">*</span></label>
+                                    <textarea id="unit5Syllabus" name="unit5Syllabus" rows="4" placeholder="Enter syllabus details for Unit V..." required></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Total Contact Hours display -->
+                    <div class="total-hours-container">
+                        <span>Total Contact Hours:</span>
+                        <span id="totalHoursVal" class="hours-badge">0</span>
+                    </div>
+                </section>
+
+                <!-- 5. Lab Course Section (List of Experiments) -->
+                <section id="labSection" class="card conditional-section hidden">
+                    <div class="card-header">
+                        <span class="step-num">05</span>
+                        <h2>List of Experiments</h2>
+                    </div>
+                    <p class="section-desc">Provide a detailed list of practical experiments for this course.</p>
+                    
+                    <div id="experimentsContainer" class="dynamic-list-container">
+                        <!-- Dynamic inputs will be inserted here -->
+                    </div>
+                    
+                    <div class="button-group flex-end">
+                        <button type="button" class="btn btn-secondary btn-icon" id="addExperimentBtn">
+                            <span class="icon">+</span> Add Experiment
+                        </button>
+                        <button type="button" class="btn btn-danger btn-icon" id="removeExperimentBtn">
+                            <span class="icon">-</span> Remove Experiment
+                        </button>
+                    </div>
+                </section>
+
+                <!-- 7. Course Outcomes -->
+                <section class="card">
+                    <div class="card-header">
+                        <span class="step-num">06</span>
+                        <h2>Course Outcomes</h2>
+                    </div>
+                    <p class="section-desc">Specify the measurable knowledge/skills students will acquire.</p>
+                    
+                    <div id="outcomesContainer" class="dynamic-list-container">
+                        <!-- Dynamic inputs will be inserted here -->
+                    </div>
+                    
+                    <div class="button-group flex-end">
+                        <button type="button" class="btn btn-secondary btn-icon" id="addOutcomeBtn">
+                            <span class="icon">+</span> Add Outcome
+                        </button>
+                        <button type="button" class="btn btn-danger btn-icon" id="removeOutcomeBtn">
+                            <span class="icon">-</span> Remove Outcome
+                        </button>
+                    </div>
+                </section>
+
+                <!-- 8. Text Books -->
+                <section class="card">
+                    <div class="card-header">
+                        <span class="step-num">07</span>
+                        <h2>Text Book(s)</h2>
+                    </div>
+                    <p class="section-desc">List standard reference textbooks required for the course.</p>
+                    
+                    <div id="textbooksContainer" class="dynamic-list-container">
+                        <!-- Dynamic inputs will be inserted here -->
+                    </div>
+                    
+                    <div class="button-group flex-end">
+                        <button type="button" class="btn btn-secondary btn-icon" id="addTextbookBtn">
+                            <span class="icon">+</span> Add Textbook
+                        </button>
+                        <button type="button" class="btn btn-danger btn-icon" id="removeTextbookBtn">
+                            <span class="icon">-</span> Remove Textbook
+                        </button>
+                    </div>
+                </section>
+
+                <!-- 9. Reference Books / Web Links -->
+                <section class="card">
+                    <div class="card-header">
+                        <span class="step-num">08</span>
+                        <h2>Reference Books / Web Links</h2>
+                    </div>
+                    <p class="section-desc">List additional reference reading materials and web resources.</p>
+                    
+                    <div id="referencesContainer" class="dynamic-list-container">
+                        <!-- Dynamic inputs will be inserted here -->
+                    </div>
+                    
+                    <div class="button-group flex-end">
+                        <button type="button" class="btn btn-secondary btn-icon" id="addReferenceBtn">
+                            <span class="icon">+</span> Add Reference
+                        </button>
+                        <button type="button" class="btn btn-danger btn-icon" id="removeReferenceBtn">
+                            <span class="icon">-</span> Remove Reference
+                        </button>
+                    </div>
+                </section>
+
+                <!-- 10. Suggested Activities (Optional) -->
+                <section class="card">
+                    <div class="card-header">
+                        <span class="step-num">09</span>
+                        <h2>Suggested Activities <span class="optional-badge">Optional</span></h2>
+                    </div>
+                    <p class="section-desc">Innovative learning activities (e.g. seminars, quizzes, projects).</p>
+                    
+                    <div id="activitiesContainer" class="dynamic-list-container">
+                        <!-- Dynamic inputs will be inserted here -->
+                    </div>
+                    
+                    <div class="button-group flex-end">
+                        <button type="button" class="btn btn-secondary btn-icon" id="addActivityBtn">
+                            <span class="icon">+</span> Add Activity
+                        </button>
+                        <button type="button" class="btn btn-danger btn-icon" id="removeActivityBtn">
+                            <span class="icon">-</span> Remove Activity
+                        </button>
+                    </div>
+                </section>
+
+                <!-- 11. Suggested Evaluation Methods (Optional) -->
+                <section class="card">
+                    <div class="card-header">
+                        <span class="step-num">10</span>
+                        <h2>Suggested Evaluation Methods <span class="optional-badge">Optional</span></h2>
+                    </div>
+                    <p class="section-desc">Assessment models to measure attainment of course outcomes.</p>
+                    
+                    <div id="evaluationsContainer" class="dynamic-list-container">
+                        <!-- Dynamic inputs will be inserted here -->
+                    </div>
+                    
+                    <div class="button-group flex-end">
+                        <button type="button" class="btn btn-secondary btn-icon" id="addEvaluationBtn">
+                            <span class="icon">+</span> Add Evaluation Method
+                        </button>
+                        <button type="button" class="btn btn-danger btn-icon" id="removeEvaluationBtn">
+                            <span class="icon">-</span> Remove Evaluation Method
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Error Message Banner -->
+                <div id="validationBanner" class="validation-banner hidden">
+                    <span class="banner-icon">⚠️</span>
+                    <span class="banner-text">Please resolve the highlighted errors before generating the document.</span>
+                </div>
+
+                <!-- Submit Section -->
+                <div class="submit-container">
+                    <button type="submit" class="btn-generate" id="generateDocBtn">
+                        <span class="btn-text">Generate DOCX</span>
+                        <span class="btn-spinner hidden"></span>
+                    </button>
+                </div>
+            </form>
+        </main>
+        
+        <footer class="app-footer">
+            <p>&copy; 2026 Curriculum Syllabus Creator. Built for Academic Excellence.</p>
+        </footer>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast hidden"></div>
+
+    <script src="app.js?v=3"></script>
+</body>
+</html>
