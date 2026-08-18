@@ -69,7 +69,7 @@ function parseRomanOrNumber(str) {
     return parseInt(s, 10) || 0;
 }
 
-// Clean bullet, box, tab, and numeric list prefixes
+// Clean bullet, box, tab, and numeric list prefixes completely
 function cleanPrefix(str) {
     if (!str) return "";
     return str.replace(/^[\u25AF\u25A0\u25A1●•\-\*\s\t]+/, "")
@@ -166,7 +166,7 @@ function createRowElement(containerId, rowCount, value = "", placeholder = "", r
     input.type = "text";
     input.className = "row-input";
     input.placeholder = placeholder;
-    input.value = value;
+    input.value = cleanPrefix(value);
     
     if (required) {
         input.setAttribute("required", "required");
@@ -215,7 +215,7 @@ function createRowElement(containerId, rowCount, value = "", placeholder = "", r
     return row;
 }
 
-// PROGRAMMATIC MULTI-ROW POPULATOR (Works on both ai.html and manual.html)
+// PROGRAMMATIC MULTI-ROW POPULATOR
 function setDynamicListValues(containerId, addBtnId, values) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -401,7 +401,7 @@ if (form) {
 }
 
 // ==========================================================================
-// DOCX COMPILATION USING DOCX.JS
+// DOCX COMPILATION USING DOCX.JS (NO ARTIFICIAL BULLETS)
 // ==========================================================================
 async function generateWordDocument() {
     if (!window.docx) {
@@ -537,7 +537,7 @@ async function generateWordDocument() {
         docChildren.push(new Paragraph({ spacing: { before: 120, after: 120 }, children: [] }));
     }
 
-    // Objectives Table
+    // Objectives Table (No artificial bullets)
     const objectives = getListValues("objectivesContainer");
     if (objectives.length > 0) {
         addTableSpacer();
@@ -555,7 +555,7 @@ async function generateWordDocument() {
             objectiveRows.push(new TableRow({
                 children: [
                     new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: `●  ${cleanPrefix(obj)}`, size: 24 })], alignment: AlignmentType.LEFT })],
+                        children: [new Paragraph({ children: [new TextRun({ text: cleanPrefix(obj), size: 24 })], alignment: AlignmentType.LEFT })],
                         margins: cellMargins, width: { size: 10204, type: WidthType.DXA }
                     })
                 ]
@@ -564,7 +564,7 @@ async function generateWordDocument() {
         docChildren.push(new Table({ width: { size: 10204, type: WidthType.DXA }, borders: tableBorders, rows: objectiveRows }));
     }
 
-    // Theory Syllabus Units Table (With Cleaned Mid-Sentence Soft Newlines)
+    // Theory Syllabus Units Table
     if (courseType === "Theory" || courseType === "Lab Oriented Theory") {
         addTableSpacer();
         const unitTableRows = [];
@@ -595,7 +595,6 @@ async function generateWordDocument() {
                 ]
             }));
 
-            // Clean unwanted soft wrapping newlines in syllabus text
             const cleanedSyllabus = rawSyllabus.split(/\r?\n/).map(l => l.trim()).filter(Boolean).join(" ").replace(/\s+/g, " ");
             const syllabusParagraphs = [
                 new Paragraph({ children: [new TextRun({ text: cleanedSyllabus, size: 24 })], alignment: AlignmentType.JUSTIFIED })
@@ -661,7 +660,7 @@ async function generateWordDocument() {
         }
     }
 
-    // Course Outcomes Table
+    // Course Outcomes Table (No artificial bullets)
     const outcomes = getListValues("outcomesContainer");
     if (outcomes.length > 0) {
         addTableSpacer();
@@ -688,7 +687,7 @@ async function generateWordDocument() {
             outcomeRows.push(new TableRow({
                 children: [
                     new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: `●  ${cleanPrefix(out)}`, size: 24 })], alignment: AlignmentType.LEFT })],
+                        children: [new Paragraph({ children: [new TextRun({ text: cleanPrefix(out), size: 24 })], alignment: AlignmentType.LEFT })],
                         margins: cellMargins, width: { size: 10204, type: WidthType.DXA }
                     })
                 ]
@@ -789,7 +788,7 @@ async function generateWordDocument() {
 }
 
 // ==========================================================================
-// RENDER LIVE DOCUMENT PREVIEW (Cleaned Bullets & Continuous Syllabus Text)
+// RENDER LIVE DOCUMENT PREVIEW (NO ARTIFICIAL BULLETS)
 // ==========================================================================
 function renderLiveDocumentPreview() {
     const previewContainer = document.getElementById("documentPreview");
@@ -843,7 +842,7 @@ function renderLiveDocumentPreview() {
         html += `
             <table>
                 <tr><th class="section-title-cell">Objectives:</th></tr>
-                ${objectives.map(o => `<tr><td>● ${cleanPrefix(o)}</td></tr>`).join('')}
+                ${objectives.map(o => `<tr><td>${cleanPrefix(o)}</td></tr>`).join('')}
             </table>
         `;
     }
@@ -858,7 +857,6 @@ function renderLiveDocumentPreview() {
             const rawSyllabus = (document.getElementById(`unit${i}Syllabus`)?.value || "").trim();
             totalHrs += parseInt(uHours, 10) || 0;
 
-            // Clean unwanted soft wrapping newlines in syllabus text
             const cleanedSyllabus = rawSyllabus.split(/\r?\n/).map(l => l.trim()).filter(Boolean).join(" ").replace(/\s+/g, " ");
 
             html += `
@@ -893,7 +891,7 @@ function renderLiveDocumentPreview() {
             <table>
                 <tr><th class="section-title-cell">Course Outcomes:</th></tr>
                 <tr><td><em>On completion of the course, students will be able to</em></td></tr>
-                ${outcomes.map(o => `<tr><td>● ${cleanPrefix(o)}</td></tr>`).join('')}
+                ${outcomes.map(o => `<tr><td>${cleanPrefix(o)}</td></tr>`).join('')}
             </table>
         `;
     }
@@ -1115,9 +1113,6 @@ function parseFullSyllabusText() {
 
         let currentSection = "";
 
-        // ----------------------------------------------------------------------
-        // PASS 1: TAB-SEPARATED OR MULTI-SPACE CELL PARSING FOR BASIC INFO TABLE
-        // ----------------------------------------------------------------------
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
             if (!line) continue;
@@ -1156,9 +1151,6 @@ function parseFullSyllabusText() {
             }
         }
 
-        // ----------------------------------------------------------------------
-        // PASS 2: STACKED MULTI-LINE OR COLON KEY-VALUE SCAN FALLBACK
-        // ----------------------------------------------------------------------
         if (!subjectCode) {
             for (let i = 0; i < lines.length - 10; i++) {
                 if (lines[i].toLowerCase().includes("subject code") &&
@@ -1209,15 +1201,11 @@ function parseFullSyllabusText() {
             }
         }
 
-        // ----------------------------------------------------------------------
-        // PASS 3: SECTION SEGMENTATION & TABBED UNIT / ITEM PARSING
-        // ----------------------------------------------------------------------
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
             if (!line) continue;
             const lower = line.toLowerCase();
 
-            // Stop parsing if we reach Matrix / Correlation tables at the bottom
             if (lower.startsWith("co - po") || lower.startsWith("co-po") || lower.includes("matrices of course") || lower.includes("correlation levels")) {
                 break;
             }
@@ -1262,7 +1250,6 @@ function parseFullSyllabusText() {
                 continue;
             }
 
-            // Unit Header Detection (Tabbed or Standard)
             const unitMatch = line.match(/^\s*(?:UNIT|MODULE)[\-–—:\s]*([I|V|X\d]+|\d+)\b(.*)$/i);
             if (unitMatch) {
                 const unitNum = parseRomanOrNumber(unitMatch[1]);
@@ -1332,7 +1319,6 @@ function parseFullSyllabusText() {
             }
         }
 
-        // Apply parsed fields to DOM controls
         const elCode = document.getElementById("subjectCode");
         const elName = document.getElementById("subjectName");
         const elCat = document.getElementById("category");
@@ -1375,13 +1361,11 @@ function parseFullSyllabusText() {
                 hoursInput.value = u.hours;
             }
             if (u.syllabus.length > 0 && syllabusTextarea) {
-                // Join soft wrapping lines into a clean continuous paragraph (removing unwanted newlines inside cell)
                 const cleanedSyllabus = u.syllabus.join(" ").replace(/\s+/g, " ").trim();
                 syllabusTextarea.value = cleanedSyllabus;
             }
         }
 
-        // Programmatically populate ALL items in lists (Reference books, outcomes, textbooks)
         if (objectives.length > 0) setDynamicListValues("objectivesContainer", "addObjectiveBtn", objectives);
         if (experiments.length > 0) setDynamicListValues("experimentsContainer", "addExperimentBtn", experiments);
         if (outcomes.length > 0) setDynamicListValues("outcomesContainer", "addOutcomeBtn", outcomes);
