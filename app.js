@@ -69,9 +69,12 @@ function parseRomanOrNumber(str) {
     return parseInt(s, 10) || 0;
 }
 
+// Clean bullet, box, tab, and numeric list prefixes
 function cleanPrefix(str) {
+    if (!str) return "";
     return str.replace(/^[\u25AF\u25A0\u25A1●•\-\*\s\t]+/, "")
               .replace(/^(\d+[\.\)\s\t]+|\[CO\d+\]|CO\d+[\:\-\s]+)\s*/i, "")
+              .replace(/^[\u25AF\u25A0\u25A1●•\-\*\s\t]+/, "")
               .trim();
 }
 
@@ -111,23 +114,9 @@ function initDynamicList(containerId, addBtnId, removeBtnId, placeholder, requir
     const processPasteText = () => {
         const text = bulkTextarea.value.trim();
         if (text) {
-            const lines = text.split(/\r?\n/).map(line => cleanPrefix(line)).filter(line => line.length > 0 && !/^\d+$/.test(line));
+            const lines = text.split(/\r?\n/).map(line => cleanPrefix(line)).filter(line => line.length > 0);
             if (lines.length > 0) {
-                const firstRowInput = container.querySelector(".row-input");
-                let startIndex = 0;
-                if (container.children.length === 1 && firstRowInput && firstRowInput.value.trim() === "") {
-                    firstRowInput.value = lines[0];
-                    firstRowInput.classList.remove("invalid");
-                    const err = firstRowInput.parentElement.querySelector(".error-message");
-                    if (err) err.remove();
-                    startIndex = 1;
-                }
-                
-                for (let i = startIndex; i < lines.length; i++) {
-                    createRow(lines[i]);
-                }
-                
-                updateRowNumbers();
+                setDynamicListValues(containerId, addBtnId, lines);
                 renderLiveDocumentPreview();
                 showToast(`Auto-detected and imported ${lines.length} items!`, "success");
             }
@@ -141,84 +130,12 @@ function initDynamicList(containerId, addBtnId, removeBtnId, placeholder, requir
 
     importBtn.onclick = processPasteText;
 
-    function createRow(value = "") {
-        const rowCount = container.children.length + 1;
-        const row = document.createElement("div");
-        row.className = "dynamic-row";
-        
-        const numSpan = document.createElement("span");
-        numSpan.className = "row-num";
-        numSpan.textContent = rowCount + ".";
-
-        const input = document.createElement("input");
-        input.type = "text";
-        input.className = "row-input";
-        input.placeholder = placeholder;
-        input.value = value;
-        
-        if (required) {
-            input.setAttribute("required", "required");
-        }
-
-        input.addEventListener("paste", (e) => {
-            const pastedText = (e.clipboardData || window.clipboardData).getData("text");
-            if (pastedText.includes("\n") || pastedText.includes("\r")) {
-                e.preventDefault();
-                const lines = pastedText.split(/\r?\n/).map(line => cleanPrefix(line)).filter(line => line.length > 0 && !/^\d+$/.test(line));
-                if (lines.length > 0) {
-                    input.value = lines[0];
-                    input.classList.remove("invalid");
-                    const err = row.querySelector(".error-message");
-                    if (err) err.remove();
-                    
-                    for (let i = 1; i < lines.length; i++) {
-                        createRow(lines[i]);
-                    }
-                    updateRowNumbers();
-                    renderLiveDocumentPreview();
-                    showToast(`Auto-detected and added ${lines.length} items!`, "success");
-                }
-            }
-        });
-
-        input.addEventListener("input", () => {
-            if (input.value.trim() !== "") {
-                input.classList.remove("invalid");
-                const errorSpan = row.querySelector(".error-message");
-                if (errorSpan) errorSpan.remove();
-            }
-            renderLiveDocumentPreview();
-        });
-
-        const deleteBtn = document.createElement("button");
-        deleteBtn.type = "button";
-        deleteBtn.className = "btn-row-remove";
-        deleteBtn.innerHTML = "&times;";
-        deleteBtn.title = "Delete this row";
-        deleteBtn.onclick = () => {
-            if (container.children.length > 1) {
-                row.remove();
-                updateRowNumbers();
-                renderLiveDocumentPreview();
-            } else {
-                showToast("Cannot remove the last item. You can clear its content if optional.", "error");
-            }
-        };
-
-        row.appendChild(numSpan);
-        row.appendChild(input);
-        row.appendChild(deleteBtn);
-        container.appendChild(row);
-    }
-
-    function updateRowNumbers() {
-        Array.from(container.children).forEach((child, index) => {
-            child.querySelector(".row-num").textContent = (index + 1) + ".";
-        });
-    }
-
     if (addBtn) {
-        addBtn.addEventListener("click", () => createRow());
+        addBtn.addEventListener("click", () => {
+            const rowCount = container.children.length + 1;
+            const row = createRowElement(containerId, rowCount, "", placeholder, required);
+            container.appendChild(row);
+        });
     }
     if (removeBtn) {
         removeBtn.addEventListener("click", () => {
@@ -231,7 +148,86 @@ function initDynamicList(containerId, addBtnId, removeBtnId, placeholder, requir
         });
     }
 
-    createRow();
+    if (container.children.length === 0) {
+        container.appendChild(createRowElement(containerId, 1, "", placeholder, required));
+    }
+}
+
+function createRowElement(containerId, rowCount, value = "", placeholder = "", required = true) {
+    const container = document.getElementById(containerId);
+    const row = document.createElement("div");
+    row.className = "dynamic-row";
+    
+    const numSpan = document.createElement("span");
+    numSpan.className = "row-num";
+    numSpan.textContent = rowCount + ".";
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "row-input";
+    input.placeholder = placeholder;
+    input.value = value;
+    
+    if (required) {
+        input.setAttribute("required", "required");
+    }
+
+    input.addEventListener("paste", (e) => {
+        const pastedText = (e.clipboardData || window.clipboardData).getData("text");
+        if (pastedText.includes("\n") || pastedText.includes("\r")) {
+            e.preventDefault();
+            const lines = pastedText.split(/\r?\n/).map(line => cleanPrefix(line)).filter(line => line.length > 0);
+            if (lines.length > 0) {
+                setDynamicListValues(containerId, null, lines);
+                renderLiveDocumentPreview();
+                showToast(`Auto-detected and added ${lines.length} items!`, "success");
+            }
+        }
+    });
+
+    input.addEventListener("input", () => {
+        if (input.value.trim() !== "") {
+            input.classList.remove("invalid");
+            const errorSpan = row.querySelector(".error-message");
+            if (errorSpan) errorSpan.remove();
+        }
+        renderLiveDocumentPreview();
+    });
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.className = "btn-row-remove";
+    deleteBtn.innerHTML = "&times;";
+    deleteBtn.title = "Delete this row";
+    deleteBtn.onclick = () => {
+        if (container.children.length > 1) {
+            row.remove();
+            Array.from(container.children).forEach((child, index) => {
+                child.querySelector(".row-num").textContent = (index + 1) + ".";
+            });
+            renderLiveDocumentPreview();
+        }
+    };
+
+    row.appendChild(numSpan);
+    row.appendChild(input);
+    row.appendChild(deleteBtn);
+    return row;
+}
+
+// PROGRAMMATIC MULTI-ROW POPULATOR (Works on both ai.html and manual.html)
+function setDynamicListValues(containerId, addBtnId, values) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    container.innerHTML = "";
+    const cleanValues = (values || []).map(v => cleanPrefix(v)).filter(Boolean);
+    const finalValues = cleanValues.length > 0 ? cleanValues : [""];
+
+    finalValues.forEach((val, index) => {
+        const row = createRowElement(containerId, index + 1, val, "Enter item details...", false);
+        container.appendChild(row);
+    });
 }
 
 function getListValues(containerId) {
@@ -240,7 +236,7 @@ function getListValues(containerId) {
     const inputs = container.querySelectorAll(".row-input");
     const values = [];
     inputs.forEach(input => {
-        const val = input.value.trim();
+        const val = cleanPrefix(input.value);
         if (val) {
             values.push(val);
         }
@@ -559,7 +555,7 @@ async function generateWordDocument() {
             objectiveRows.push(new TableRow({
                 children: [
                     new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: `●  ${obj}`, size: 24 })], alignment: AlignmentType.LEFT })],
+                        children: [new Paragraph({ children: [new TextRun({ text: `●  ${cleanPrefix(obj)}`, size: 24 })], alignment: AlignmentType.LEFT })],
                         margins: cellMargins, width: { size: 10204, type: WidthType.DXA }
                     })
                 ]
@@ -568,7 +564,7 @@ async function generateWordDocument() {
         docChildren.push(new Table({ width: { size: 10204, type: WidthType.DXA }, borders: tableBorders, rows: objectiveRows }));
     }
 
-    // Theory Syllabus Units Table
+    // Theory Syllabus Units Table (With Cleaned Mid-Sentence Soft Newlines)
     if (courseType === "Theory" || courseType === "Lab Oriented Theory") {
         addTableSpacer();
         const unitTableRows = [];
@@ -579,7 +575,7 @@ async function generateWordDocument() {
 
             const unitTitle = unitTitleEl ? unitTitleEl.value.trim() : "";
             const unitHours = unitHoursEl ? unitHoursEl.value : "9";
-            const unitSyllabus = unitSyllabusEl ? unitSyllabusEl.value.trim() : "";
+            const rawSyllabus = unitSyllabusEl ? unitSyllabusEl.value.trim() : "";
             const roman = getRomanNumeral(i);
             
             unitTableRows.push(new TableRow({
@@ -599,13 +595,11 @@ async function generateWordDocument() {
                 ]
             }));
 
-            const syllabusParagraphs = [];
-            const lines = unitSyllabus.split("\n");
-            lines.forEach(line => {
-                if (line.trim()) {
-                    syllabusParagraphs.push(new Paragraph({ children: [new TextRun({ text: line.trim(), size: 24 })], alignment: AlignmentType.JUSTIFIED }));
-                }
-            });
+            // Clean unwanted soft wrapping newlines in syllabus text
+            const cleanedSyllabus = rawSyllabus.split(/\r?\n/).map(l => l.trim()).filter(Boolean).join(" ").replace(/\s+/g, " ");
+            const syllabusParagraphs = [
+                new Paragraph({ children: [new TextRun({ text: cleanedSyllabus, size: 24 })], alignment: AlignmentType.JUSTIFIED })
+            ];
 
             unitTableRows.push(new TableRow({
                 children: [
@@ -656,7 +650,7 @@ async function generateWordDocument() {
                             verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 567, type: WidthType.DXA }
                         }),
                         new TableCell({
-                            children: [new Paragraph({ children: [new TextRun({ text: exp, size: 24 })], alignment: AlignmentType.LEFT })],
+                            children: [new Paragraph({ children: [new TextRun({ text: cleanPrefix(exp), size: 24 })], alignment: AlignmentType.LEFT })],
                             verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 9637, type: WidthType.DXA }
                         })
                     ]
@@ -694,7 +688,7 @@ async function generateWordDocument() {
             outcomeRows.push(new TableRow({
                 children: [
                     new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: `●  ${out}`, size: 24 })], alignment: AlignmentType.LEFT })],
+                        children: [new Paragraph({ children: [new TextRun({ text: `●  ${cleanPrefix(out)}`, size: 24 })], alignment: AlignmentType.LEFT })],
                         margins: cellMargins, width: { size: 10204, type: WidthType.DXA }
                     })
                 ]
@@ -727,7 +721,7 @@ async function generateWordDocument() {
                             verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 567, type: WidthType.DXA }
                         }),
                         new TableCell({
-                            children: [new Paragraph({ children: [new TextRun({ text: tb, size: 24 })], alignment: AlignmentType.LEFT })],
+                            children: [new Paragraph({ children: [new TextRun({ text: cleanPrefix(tb), size: 24 })], alignment: AlignmentType.LEFT })],
                             verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 9637, type: WidthType.DXA }
                         })
                     ]
@@ -752,7 +746,7 @@ async function generateWordDocument() {
                             verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 567, type: WidthType.DXA }
                         }),
                         new TableCell({
-                            children: [new Paragraph({ children: [new TextRun({ text: ref, size: 24 })], alignment: AlignmentType.LEFT })],
+                            children: [new Paragraph({ children: [new TextRun({ text: cleanPrefix(ref), size: 24 })], alignment: AlignmentType.LEFT })],
                             verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 9637, type: WidthType.DXA }
                         })
                     ]
@@ -795,7 +789,7 @@ async function generateWordDocument() {
 }
 
 // ==========================================================================
-// RENDER LIVE DOCUMENT PREVIEW (Matching Word DOCX layout & Font Settings)
+// RENDER LIVE DOCUMENT PREVIEW (Cleaned Bullets & Continuous Syllabus Text)
 // ==========================================================================
 function renderLiveDocumentPreview() {
     const previewContainer = document.getElementById("documentPreview");
@@ -849,7 +843,7 @@ function renderLiveDocumentPreview() {
         html += `
             <table>
                 <tr><th class="section-title-cell">Objectives:</th></tr>
-                ${objectives.map(o => `<tr><td>● ${o}</td></tr>`).join('')}
+                ${objectives.map(o => `<tr><td>● ${cleanPrefix(o)}</td></tr>`).join('')}
             </table>
         `;
     }
@@ -861,8 +855,11 @@ function renderLiveDocumentPreview() {
             const roman = getRomanNumeral(i);
             const uTitle = (document.getElementById(`unit${i}Title`)?.value || "").trim();
             const uHours = (document.getElementById(`unit${i}Hours`)?.value || "9").trim();
-            const uSyllabus = (document.getElementById(`unit${i}Syllabus`)?.value || "").trim();
+            const rawSyllabus = (document.getElementById(`unit${i}Syllabus`)?.value || "").trim();
             totalHrs += parseInt(uHours, 10) || 0;
+
+            // Clean unwanted soft wrapping newlines in syllabus text
+            const cleanedSyllabus = rawSyllabus.split(/\r?\n/).map(l => l.trim()).filter(Boolean).join(" ").replace(/\s+/g, " ");
 
             html += `
                 <tr class="unit-header-cell">
@@ -871,7 +868,7 @@ function renderLiveDocumentPreview() {
                     <td style="width: 15%; text-align: right;"><strong>${uHours}</strong></td>
                 </tr>
                 <tr>
-                    <td colspan="3" style="text-align: justify; padding: 10px;">${uSyllabus.replace(/\n/g, '<br>')}</td>
+                    <td colspan="3" style="text-align: justify; padding: 10px;">${cleanedSyllabus}</td>
                 </tr>
             `;
         }
@@ -886,7 +883,7 @@ function renderLiveDocumentPreview() {
         html += `
             <table>
                 <tr><th colspan="2" class="section-title-cell">LIST OF EXPERIMENTS</th></tr>
-                ${experiments.map((e, idx) => `<tr><td style="width: 8%; text-align: center;">${idx + 1}</td><td>${e}</td></tr>`).join('')}
+                ${experiments.map((e, idx) => `<tr><td style="width: 8%; text-align: center;">${idx + 1}</td><td>${cleanPrefix(e)}</td></tr>`).join('')}
             </table>
         `;
     }
@@ -896,7 +893,7 @@ function renderLiveDocumentPreview() {
             <table>
                 <tr><th class="section-title-cell">Course Outcomes:</th></tr>
                 <tr><td><em>On completion of the course, students will be able to</em></td></tr>
-                ${outcomes.map(o => `<tr><td>● ${o}</td></tr>`).join('')}
+                ${outcomes.map(o => `<tr><td>● ${cleanPrefix(o)}</td></tr>`).join('')}
             </table>
         `;
     }
@@ -905,11 +902,11 @@ function renderLiveDocumentPreview() {
         html += `<table>`;
         if (textbooks.length > 0) {
             html += `<tr><th colspan="2" class="section-title-cell">Text Books:</th></tr>`;
-            html += textbooks.map((tb, idx) => `<tr><td style="width: 8%; text-align: center;">${idx + 1}</td><td>${tb}</td></tr>`).join('');
+            html += textbooks.map((tb, idx) => `<tr><td style="width: 8%; text-align: center;">${idx + 1}</td><td>${cleanPrefix(tb)}</td></tr>`).join('');
         }
         if (references.length > 0) {
             html += `<tr><th colspan="2" class="section-title-cell">Reference Book(s) / Web links:</th></tr>`;
-            html += references.map((rf, idx) => `<tr><td style="width: 8%; text-align: center;">${idx + 1}</td><td>${rf}</td></tr>`).join('');
+            html += references.map((rf, idx) => `<tr><td style="width: 8%; text-align: center;">${idx + 1}</td><td>${cleanPrefix(rf)}</td></tr>`).join('');
         }
         html += `</table>`;
     }
@@ -922,41 +919,6 @@ function renderLiveDocumentPreview() {
 // ==========================================================================
 // EXCEL EXPORT & IMPORT UTILITIES
 // ==========================================================================
-function setDynamicListValues(containerId, addBtnId, values) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-    
-    while (container.children.length > 1) {
-        container.lastElementChild.remove();
-    }
-    const firstInput = container.querySelector(".row-input");
-    if (firstInput) {
-        firstInput.value = "";
-    }
-    
-    if (!values || values.length === 0) {
-        return;
-    }
-    
-    const addBtn = document.getElementById(addBtnId);
-    values.forEach((val, index) => {
-        if (index === 0) {
-            if (firstInput) {
-                firstInput.value = val;
-                firstInput.dispatchEvent(new Event("input"));
-            }
-        } else {
-            if (addBtn) addBtn.click();
-            const inputs = container.querySelectorAll(".row-input");
-            const lastInput = inputs[inputs.length - 1];
-            if (lastInput) {
-                lastInput.value = val;
-                lastInput.dispatchEvent(new Event("input"));
-            }
-        }
-    });
-}
-
 function downloadExcelTemplate() {
     if (!window.XLSX) {
         showToast("Excel generator library is not loaded. Check internet connection.", "error");
@@ -1097,7 +1059,7 @@ function handleExcelUpload(event) {
                     }
                 }
                 if (listData !== null) {
-                    const lines = listData.split(/\r?\n/).map(line => cleanPrefix(line)).filter(line => line.length > 0 && !/^\d+$/.test(line));
+                    const lines = listData.split(/\r?\n/).map(line => cleanPrefix(line)).filter(Boolean);
                     setDynamicListValues(mapping.containerId, mapping.addBtnId, lines);
                 }
             });
@@ -1116,7 +1078,7 @@ function handleExcelUpload(event) {
 }
 
 // ==========================================================================
-// UNIVERSAL MULTI-FORMAT HEURISTIC PARSER ENGINE (Tabbed, Stacked & Key-Value)
+// UNIVERSAL MULTI-FORMAT HEURISTIC PARSER ENGINE
 // ==========================================================================
 function parseFullSyllabusText() {
     try {
@@ -1160,11 +1122,8 @@ function parseFullSyllabusText() {
             const line = lines[i];
             if (!line) continue;
 
-            // Pattern 1: Tab-separated single line containing Subject Code and Subject Name values
-            // e.g. "HS19151	TECHNICAL ENGLISH	HS	2	1	0	3"
             const tabCells = line.split(/\t+/).map(s => s.trim()).filter(Boolean);
             if (tabCells.length >= 5) {
-                // Check if first cell looks like a Subject Code e.g. HS19151, CS301
                 const firstCell = tabCells[0];
                 if (/^[A-Za-z0-9\-]{3,10}$/.test(firstCell) && !firstCell.toLowerCase().includes("subject")) {
                     subjectCode = tabCells[0];
@@ -1178,7 +1137,6 @@ function parseFullSyllabusText() {
                 }
             }
 
-            // Pattern 2: Tabbed header followed by values on next line
             if (line.toLowerCase().includes("subject code") && line.includes("\t")) {
                 let nextIdx = i + 1;
                 while (nextIdx < lines.length && !lines[nextIdx]) nextIdx++;
@@ -1268,11 +1226,9 @@ function parseFullSyllabusText() {
                 continue;
             }
 
-            // Skip table header row if tabbed
             if (line.includes("\t") && lower.includes("subject code")) {
                 continue;
             }
-            // Skip data row if we already parsed subject code from it
             if (subjectCode && line.includes(subjectCode)) {
                 continue;
             }
@@ -1306,8 +1262,7 @@ function parseFullSyllabusText() {
                 continue;
             }
 
-            // Check for Unit Header (Tabbed or Standard)
-            // e.g. "UNIT-I	VOCABULARY BUILDING	9" or "UNIT I: INTRODUCTION"
+            // Unit Header Detection (Tabbed or Standard)
             const unitMatch = line.match(/^\s*(?:UNIT|MODULE)[\-–—:\s]*([I|V|X\d]+|\d+)\b(.*)$/i);
             if (unitMatch) {
                 const unitNum = parseRomanOrNumber(unitMatch[1]);
@@ -1317,7 +1272,6 @@ function parseFullSyllabusText() {
                     let title = "";
                     let hours = "9";
 
-                    // Handle tabbed unit header e.g. "UNIT-I \t VOCABULARY BUILDING \t 9"
                     if (remainder.includes("\t")) {
                         const parts = remainder.split(/\t+/).map(s => s.trim()).filter(Boolean);
                         if (parts.length >= 2) {
@@ -1337,7 +1291,6 @@ function parseFullSyllabusText() {
                         }
                     }
 
-                    // Check next lines if title/hours are missing
                     if (!title && i + 1 < lines.length && !lines[i + 1].match(/^\d+$/) && !lines[i + 1].toLowerCase().startsWith("unit")) {
                         i++;
                         title = lines[i];
@@ -1414,18 +1367,21 @@ function parseFullSyllabusText() {
             const hoursInput = document.getElementById(`unit${i}Hours`);
             const syllabusTextarea = document.getElementById(`unit${i}Syllabus`);
             
-            if (u.title) {
-                if (titleInput) titleInput.value = u.title;
+            if (u.title && titleInput) {
+                titleInput.value = u.title;
                 filledUnits++;
             }
-            if (u.hours) {
-                if (hoursInput) hoursInput.value = u.hours;
+            if (u.hours && hoursInput) {
+                hoursInput.value = u.hours;
             }
-            if (u.syllabus.length > 0) {
-                if (syllabusTextarea) syllabusTextarea.value = u.syllabus.join("\n");
+            if (u.syllabus.length > 0 && syllabusTextarea) {
+                // Join soft wrapping lines into a clean continuous paragraph (removing unwanted newlines inside cell)
+                const cleanedSyllabus = u.syllabus.join(" ").replace(/\s+/g, " ").trim();
+                syllabusTextarea.value = cleanedSyllabus;
             }
         }
 
+        // Programmatically populate ALL items in lists (Reference books, outcomes, textbooks)
         if (objectives.length > 0) setDynamicListValues("objectivesContainer", "addObjectiveBtn", objectives);
         if (experiments.length > 0) setDynamicListValues("experimentsContainer", "addExperimentBtn", experiments);
         if (outcomes.length > 0) setDynamicListValues("outcomesContainer", "addOutcomeBtn", outcomes);
@@ -1451,14 +1407,13 @@ function parseFullSyllabusText() {
             parserFeedback.classList.remove("hidden");
         }
 
-        showToast("Syllabus successfully auto-detected and document preview rendered!", "success");
+        showToast(`Successfully extracted ${references.length} reference books, ${outcomes.length} outcomes, and syllabus units!`, "success");
     } catch (err) {
         console.error("Syllabus parser error:", err);
         showToast(`Failed to parse text: ${err.message}`, "error");
     }
 }
 
-// Sample text matching the exact tab-separated format from the user's prompt
 function loadSampleSyllabusText() {
     const sampleText = `Subject Code\tSubject Name (Theory course)\tCategory\tL\tT\tP\tC
 HS19151\tTECHNICAL ENGLISH\tHS\t2\t1\t0\t3
@@ -1469,16 +1424,21 @@ Objectives:
 \tTo speak flawlessly in all kinds of communicative contexts.
 
 UNIT-I\tVOCABULARY BUILDING\t9
-The concept of word formation - Root words from foreign languages and their use in English - Acquaintance with prefixes and suffixes from foreign languages in English to form derivatives - Synonyms, antonyms, and standard abbreviations. Compound words – abbreviation – single word substitution – Listening: Listening comprehension, listening to motivational speeches, podcasts and poetry. Speaking: Short talks on incidents - place of visit – admiring personalities, etc.
+The concept of word formation - Root words from foreign languages and their use in English - Acquaintance with prefixes and suffixes from foreign languages in English to form derivatives - Synonyms, antonyms, and standard abbreviations. Compound words – abbreviation – single word substitution – Listening: Listening comprehension, listening to motivational speeches, podcasts and poetry. Speaking: Short talks on incidents - place of visit – admiring
+personalities, etc.
 
 UNIT-II\tBASIC WRITING SKILLS\t9
-Sentence structures - Use of phrases and clauses in sentences - punctuation - coherence - Organizing principles of paragraphs in documents - Techniques for writing precisely. Reading & Writing – Free writing – paragraphs - article reading and writing criticism - change of tense forms in short text or story – inferential reading – rewrite or interpret text - prepare questions based on the text. Speaking: Everyday situations – conversations and dialogues, speaking for and against.
+Sentence structures - Use of phrases and clauses in sentences - punctuation - coherence - Organizing principles of paragraphs in documents - Techniques for writing precisely. Reading & Writing – Free writing – paragraphs - article reading and writing criticism - change of tense forms in short text or story – inferential reading – rewrite or interpret text
+- prepare questions based on the text. Speaking: Everyday situations – conversations and dialogues, speaking for and
+against.
 
 UNIT-III\tGRAMMAR AND LANGUAGE DEVELOPMENT\t9
-Subject-verb agreement- Noun-pronoun agreement - Articles – Prepositions – Redundancies. Reading & Writing: Read from innovation and ideas that changed the world, newspaper column writing – Speaking: Demonstrative speaking practice using visual aids (charts, graphs, maps, pictures, etc.)
+Subject-verb agreement- Noun-pronoun agreement - Articles – Prepositions – Redundancies. Reading & Writing: Read from innovation and ideas that changed the world, newspaper column writing – Speaking: Demonstrative speaking
+practice using visual aids (charts, graphs, maps, pictures, etc.)
 
 UNIT-IV\tWRITING FOR FORMAL PRESENTATION\t9
-Nature and Style of sensible Writing - Describing – Defining – Classifying - Providing examples or evidence - Writing introduction and conclusion. Reading & Writing – Read from Literary pieces – identify different parts text – Difference between print and digital writing. Writing: Recommendations - Foreword - Review of book. Speaking- Formal Presentations – Debate on social issues/taboos and solutions.
+Nature and Style of sensible Writing - Describing – Defining – Classifying - Providing examples or evidence - Writing introduction and conclusion. Reading & Writing – Read from Literary pieces – identify different parts text – Difference between print and digital writing. Writing: Recommendations - Foreword - Review of book. Speaking- Formal
+Presentations – Debate on social issues/taboos and solutions.
 
 UNIT-V\tEXTENDED WRITING AND SPEAKING\t9
 Writing: Précis writing – Essay writing – workplace communication: Resume – Business letters and emails – Proposals. Speaking: Panel discussion – reporting an event – mock interview – Master Ceremony.
