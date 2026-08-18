@@ -166,7 +166,6 @@ function createRowElement(containerId, rowCount, value = "", placeholder = "", r
     input.type = "text";
     input.className = "row-input";
     input.placeholder = placeholder;
-    // Clean bullet in input field itself
     input.value = cleanPrefix(value);
     
     if (required) {
@@ -557,7 +556,7 @@ async function generateWordDocument() {
         docChildren.push(new Paragraph({ spacing: { before: 120, after: 120 }, children: [] }));
     }
 
-    // Objectives Table (With Elegant Bullet Bullet Output in DOCX)
+    // Objectives Table (With Bullet Output in DOCX)
     const objectives = getListValues("objectivesContainer");
     if (objectives.length > 0) {
         addTableSpacer();
@@ -685,7 +684,7 @@ async function generateWordDocument() {
         }
     }
 
-    // Course Outcomes Table (With Elegant Bullet Output in DOCX)
+    // Course Outcomes Table (With Bullet Output in DOCX)
     const outcomes = getListValues("outcomesContainer");
     if (outcomes.length > 0) {
         addTableSpacer();
@@ -813,7 +812,7 @@ async function generateWordDocument() {
 }
 
 // ==========================================================================
-// EXPORT LIVE PREVIEW TO PDF FUNCTION
+// EXPORT LIVE PREVIEW TO PDF / PRINT FUNCTION (CONTINUOUS FLOW FIX)
 // ==========================================================================
 function exportToPDF() {
     const previewEl = document.getElementById("documentPreview");
@@ -824,7 +823,7 @@ function exportToPDF() {
 
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
-        showToast("Please allow popups to export the PDF document.", "error");
+        showToast("Please allow popups to export or print the PDF document.", "error");
         return;
     }
 
@@ -835,28 +834,35 @@ function exportToPDF() {
             <title>Curriculum Syllabus Document</title>
             <style>
                 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+                * { box-sizing: border-box; margin: 0; padding: 0; }
                 body {
                     font-family: '${selectedFont}', 'Poppins', sans-serif;
-                    margin: 0;
-                    padding: 20px;
+                    padding: 15mm;
                     color: #000000;
                     background: #FFFFFF;
+                    font-size: 11pt;
                 }
                 table {
                     width: 100%;
                     border-collapse: collapse;
-                    margin-bottom: 1rem;
-                    page-break-inside: avoid;
+                    margin-bottom: 14px;
+                    page-break-inside: auto !important;
+                    break-inside: auto !important;
+                }
+                tr {
+                    page-break-inside: avoid !important;
+                    break-inside: avoid !important;
                 }
                 th, td {
                     border: 1px solid #000000;
                     padding: 6px 10px;
                     font-size: 11pt;
-                    line-height: 1.4;
+                    line-height: 1.35;
                 }
                 th.section-title-cell, td.section-title-cell {
                     text-align: left !important;
                     font-weight: bold;
+                    background-color: #F8FAFC;
                 }
                 td.subject-title-cell {
                     text-align: center !important;
@@ -865,11 +871,12 @@ function exportToPDF() {
                 .unit-header-cell {
                     font-weight: bold;
                     text-transform: uppercase;
+                    background-color: #F8FAFC;
                 }
                 @media print {
                     @page {
                         size: A4 portrait;
-                        margin: 15mm;
+                        margin: 12mm 15mm;
                     }
                     body {
                         padding: 0;
@@ -892,7 +899,7 @@ function exportToPDF() {
 }
 
 // ==========================================================================
-// RENDER LIVE DOCUMENT PREVIEW (WITH BULLETS FOR OBJECTIVES & OUTCOMES)
+// RENDER LIVE DOCUMENT PREVIEW
 // ==========================================================================
 function renderLiveDocumentPreview() {
     const previewContainer = document.getElementById("documentPreview");

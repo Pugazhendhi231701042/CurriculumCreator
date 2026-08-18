@@ -41,7 +41,7 @@
 }
 
 /* ==========================================================================
-   RESET & GLOBAL STYLES (WITH LIGHT GREY TEXTURE BG)
+   RESET & GLOBAL STYLES (WITH LIGHT GREY TEXTURE BG & ANCHORED FOOTER)
    ========================================================================== */
 * {
     box-sizing: border-box;
@@ -59,19 +59,28 @@ body {
     overflow-x: hidden;
     position: relative;
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 /* ==========================================================================
-   CONTAINER & LAYOUT
+   CONTAINER & FLEX LAYOUT
    ========================================================================== */
 .app-container {
     max-width: 1040px;
     margin: 0 auto;
-    padding: 3rem 1.5rem;
+    padding: 3rem 1.5rem 1.5rem;
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    flex: 1;
+    width: 100%;
     animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 @keyframes fadeIn {
@@ -157,7 +166,7 @@ body {
 }
 
 /* ==========================================================================
-   MODE SELECTOR HERO CARD
+   MODE SELECTOR HERO CARD & HOVER EFFECTS
    ========================================================================== */
 .mode-selector-card {
     background: #FFFFFF;
@@ -203,24 +212,25 @@ a.mode-card {
     transition: var(--transition-normal);
 }
 
-/* First Button / Card: Purple outline without hover transformation */
+/* AI Smart paste card: Purple outline with smooth elevation hover effect */
 .mode-card-purple-outline {
     background: #FFFFFF;
     border: 2px solid var(--primary) !important;
     cursor: pointer;
-    box-shadow: none !important;
-    transform: none !important;
+    box-shadow: 0 4px 12px rgba(106, 27, 154, 0.05);
+    transition: var(--transition-normal);
 }
 
 .mode-card-purple-outline:hover {
-    transform: none !important;
-    box-shadow: none !important;
+    border-color: var(--primary-hover) !important;
+    transform: translateY(-3px) !important;
+    box-shadow: 0 10px 28px rgba(106, 27, 154, 0.16) !important;
 }
 
 .mode-card:not(.mode-card-purple-outline):hover {
     border-color: var(--primary);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(106, 27, 154, 0.1);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 28px rgba(106, 27, 154, 0.12);
 }
 
 .mode-icon {
@@ -664,7 +674,7 @@ select {
 }
 
 /* ==========================================================================
-   BUTTON SYSTEM (REFINED HIGH CONTRAST SOLID BUTTONS)
+   BUTTON SYSTEM
    ========================================================================== */
 .btn {
     display: inline-flex;
@@ -901,13 +911,15 @@ input.invalid, select.invalid, textarea.invalid {
     opacity: 1;
 }
 
+/* FOOTER ANCHORED AT BOTTOM */
 .app-footer {
     text-align: center;
     color: var(--text-secondary);
     font-size: 0.9rem;
     font-weight: 500;
-    margin-top: 2rem;
-    padding-top: 1rem;
+    margin-top: auto;
+    padding-top: 2rem;
+    padding-bottom: 1rem;
     border-top: 1px solid var(--border);
 }
 
