@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Curriculum Syllabus Creator | Select Creation Workflow</title>
-    <meta name="description" content="A premium purple-and-white academic web application to parse, structure, and generate professional Microsoft Word (.docx) course syllabi.">
+    <title>Curriculum Creator</title>
+    <meta name="description" content="A premium academic web application to structure and generate professional course syllabi.">
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="./Assets/rec.ico">
     <!-- Google Fonts: Poppins, Outfit and Inter -->
@@ -12,26 +12,22 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="./styles.css?v=20260818_v11">
+    <link rel="stylesheet" href="./styles.css?v=20260818_v13">
     <!-- docx.js Library -->
     <script src="https://cdn.jsdelivr.net/npm/docx@8.2.4/build/index.iife.js"></script>
     <!-- SheetJS Library -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-    <!-- Ambient Purple & Gold Glowing Spheres -->
-    <div class="glow-bg glow-bg-1"></div>
-    <div class="glow-bg glow-bg-2"></div>
-
     <div class="app-container">
         <!-- Header with Brand Logo & Settings Button -->
         <header class="app-header">
             <div class="header-top-bar">
                 <div class="badge-pill">
-                    <span class="pulse-dot"></span> Academic Studio
+                    <span class="pulse-dot"></span> Curriculum & Syllabi
                 </div>
                 <button type="button" class="btn btn-secondary btn-settings" id="btnOpenSettings">
-                    <span class="icon">⚙️</span> Document Settings
+                    <span class="icon">⚙️</span> Settings
                 </button>
             </div>
 
@@ -39,36 +35,33 @@
                 <img src="./Assets/logo.png" alt="Curriculum Creator Logo" class="header-logo">
                 <h1>Curriculum Creator</h1>
             </div>
-            <p class="subtitle">Design academic syllabi manually or paste raw content for instant AI auto-detection, live preview, and Word (.docx) download.</p>
         </header>
 
         <!-- MODE SELECTION HERO CARD -->
         <section class="mode-selector-card">
             <div class="mode-selector-header">
-                <h2>Choose Creation Workflow</h2>
-                <p>Click below to open your preferred workflow page:</p>
+                <h2>Select Creation Workflow</h2>
             </div>
             <div class="mode-options">
-                <a href="ai.html" class="mode-card active-link">
+                <a href="ai.html" class="mode-card mode-card-purple-outline">
                     <div class="mode-icon">🤖</div>
                     <div class="mode-info">
                         <h3>AI Smart Paste & Preview</h3>
-                        <p>Paste raw or misaligned text $\rightarrow$ Instant live document preview & 1-click DOCX download.</p>
+                        <p>Auto-detect syllabus fields from raw text with live preview.</p>
                     </div>
-                    <span class="mode-badge">Recommended</span>
                 </a>
                 <a href="manual.html" class="mode-card">
                     <div class="mode-icon">✍️</div>
                     <div class="mode-info">
                         <h3>Manual Form Builder</h3>
-                        <p>Step-by-step form controls with real-time live preview & custom font settings.</p>
+                        <p>Step-by-step form controls with real-time live preview.</p>
                     </div>
                 </a>
             </div>
         </section>
 
         <footer class="app-footer">
-            <p>&copy; 2026 Curriculum Syllabus Creator. Powered by Academic Excellence Studio.</p>
+            <p>Made with 💖 by Pugazhendhi B</p>
         </footer>
     </div>
 
@@ -76,22 +69,21 @@
     <div id="settingsModal" class="modal-overlay hidden">
         <div class="modal-card">
             <div class="modal-header">
-                <h2>⚙️ Document Typography Settings</h2>
+                <h2>⚙️ Document Settings</h2>
                 <button type="button" class="btn-close-modal" id="btnCloseSettings">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
                     <label for="docFontSelect">Select Document Font Family</label>
                     <select id="docFontSelect">
-                        <option value="Poppins" selected>Poppins (Modern Academic)</option>
-                        <option value="Times New Roman">Times New Roman (Classic Standard)</option>
+                        <option value="Poppins" selected>Poppins</option>
+                        <option value="Times New Roman">Times New Roman</option>
                         <option value="Calibri">Calibri</option>
                         <option value="Arial">Arial</option>
                         <option value="Georgia">Georgia</option>
                         <option value="Cambria">Cambria</option>
                         <option value="Garamond">Garamond</option>
                     </select>
-                    <span class="helper-text">Applies to both the Live Document Preview and exported Word (.docx) files.</span>
                 </div>
             </div>
             <div class="modal-footer">
@@ -103,6 +95,6 @@
     <!-- Notification Toast -->
     <div id="toast" class="toast hidden"></div>
 
-    <script src="./app.js?v=20260818_v11"></script>
+    <script src="./app.js?v=20260818_v13"></script>
 </body>
 </html>

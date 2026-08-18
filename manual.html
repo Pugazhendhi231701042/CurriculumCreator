@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Manual Form Builder | Curriculum Syllabus Creator</title>
-    <meta name="description" content="Step-by-step form controls to edit every unit, objective, textbook, and outcome manually with real-time live preview.">
+    <title>Curriculum Creator</title>
+    <meta name="description" content="Step-by-step form controls to structure and generate course syllabi.">
     <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="./Assets/rec.ico">
     <!-- Google Fonts: Poppins, Outfit and Inter -->
@@ -12,17 +12,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="./styles.css?v=20260818_v11">
+    <link rel="stylesheet" href="./styles.css?v=20260818_v13">
     <!-- docx.js Library -->
     <script src="https://cdn.jsdelivr.net/npm/docx@8.2.4/build/index.iife.js"></script>
     <!-- SheetJS Library -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-    <!-- Ambient Purple & Gold Glowing Spheres -->
-    <div class="glow-bg glow-bg-1"></div>
-    <div class="glow-bg glow-bg-2"></div>
-
     <div class="app-container">
         <!-- Header with Brand Logo & Settings Button -->
         <header class="app-header">
@@ -31,10 +27,10 @@
                     <span class="icon">←</span> Back to Home
                 </a>
                 <div class="badge-pill">
-                    <span class="pulse-dot"></span> Manual Form Builder
+                    <span class="pulse-dot"></span> Curriculum & Syllabi
                 </div>
                 <button type="button" class="btn btn-secondary btn-settings" id="btnOpenSettings">
-                    <span class="icon">⚙️</span> Document Settings
+                    <span class="icon">⚙️</span> Settings
                 </button>
             </div>
 
@@ -42,7 +38,6 @@
                 <img src="./Assets/logo.png" alt="Curriculum Creator Logo" class="header-logo">
                 <h1>Manual Form Builder</h1>
             </div>
-            <p class="subtitle">Fill in course details below step-by-step. The live document preview updates in real-time as you type!</p>
         </header>
 
         <main>
@@ -62,11 +57,10 @@
                                 <option value="Lab">Lab</option>
                                 <option value="Lab Oriented Theory">Lab Oriented Theory</option>
                             </select>
-                            <span class="helper-text">Dynamically updates required syllabus fields below.</span>
                         </div>
 
                         <div class="excel-utility-section col-span-2">
-                            <label class="excel-section-label">Excel Data Transfer Utility</label>
+                            <label class="excel-section-label">Excel Data Utility</label>
                             <div class="excel-actions">
                                 <button type="button" class="btn btn-secondary btn-icon" id="downloadTemplateBtn">
                                     <span class="icon">📥</span> Download Excel Template
@@ -98,29 +92,29 @@
                         </div>
                         <div class="form-group">
                             <label for="category">Category <span class="required">*</span></label>
-                            <input type="text" id="category" name="category" placeholder="e.g. PC (Professional Core)" required>
+                            <input type="text" id="category" name="category" placeholder="e.g. PC" required>
                         </div>
                         
                         <div class="form-group credit-input">
-                            <label for="lValue">L (Lecture) <span class="required">*</span></label>
-                            <input type="number" id="lValue" name="lValue" min="0" value="3" required>
+                            <label for="lValue">L <span class="required">*</span></label>
+                            <input type="number" id="lValue" name="lValue" min="0" value="0" required>
                         </div>
                         <div class="form-group credit-input">
-                            <label for="tValue">T (Tutorial) <span class="required">*</span></label>
+                            <label for="tValue">T <span class="required">*</span></label>
                             <input type="number" id="tValue" name="tValue" min="0" value="0" required>
                         </div>
                         <div class="form-group credit-input">
-                            <label for="pValue">P (Practical) <span class="required">*</span></label>
+                            <label for="pValue">P <span class="required">*</span></label>
                             <input type="number" id="pValue" name="pValue" min="0" value="0" required>
                         </div>
                         <div class="form-group credit-input">
-                            <label for="cValue">C (Credits) <span class="required">*</span></label>
-                            <input type="number" id="cValue" name="cValue" min="0" value="3" required>
+                            <label for="cValue">C <span class="required">*</span></label>
+                            <input type="number" id="cValue" name="cValue" min="0" value="0" required>
                         </div>
 
                         <div class="form-group col-span-4">
                             <label for="branches">Branch(es) / Department <span class="required">*</span></label>
-                            <input type="text" id="branches" name="branches" placeholder="e.g. Computer Science and Engineering, Information Technology" required>
+                            <input type="text" id="branches" name="branches" placeholder="e.g. Computer Science and Engineering" required>
                         </div>
                     </div>
                 </section>
@@ -132,7 +126,6 @@
                         <span class="step-num">03</span>
                         <h2>Course Objectives</h2>
                     </div>
-                    <p class="section-desc">Outline key pedagogical goals and instructional intents for this course.</p>
                     
                     <div id="objectivesContainer" class="dynamic-list-container"></div>
                     
@@ -165,11 +158,11 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="unit1Hours">Contact Hours <span class="required">*</span></label>
-                                    <input type="number" id="unit1Hours" name="unit1Hours" class="unit-hours-input" min="0" placeholder="9" required>
+                                    <input type="number" id="unit1Hours" name="unit1Hours" class="unit-hours-input" min="0" value="0" required>
                                 </div>
                                 <div class="form-group col-span-4">
                                     <label for="unit1Syllabus">Syllabus Topics & Details <span class="required">*</span></label>
-                                    <textarea id="unit1Syllabus" name="unit1Syllabus" rows="4" placeholder="Enter detailed syllabus breakdown for Unit I..." required></textarea>
+                                    <textarea id="unit1Syllabus" name="unit1Syllabus" rows="4" placeholder="Enter syllabus topics..." required></textarea>
                                 </div>
                             </div>
                         </div>
@@ -180,15 +173,15 @@
                             <div class="unit-grid">
                                 <div class="form-group col-span-3">
                                     <label for="unit2Title">Unit Title <span class="required">*</span></label>
-                                    <input type="text" id="unit2Title" name="unit2Title" placeholder="e.g. Stacks, Queues & Hash Tables" required>
+                                    <input type="text" id="unit2Title" name="unit2Title" placeholder="e.g. Stacks and Queues" required>
                                 </div>
                                 <div class="form-group">
                                     <label for="unit2Hours">Contact Hours <span class="required">*</span></label>
-                                    <input type="number" id="unit2Hours" name="unit2Hours" class="unit-hours-input" min="0" placeholder="9" required>
+                                    <input type="number" id="unit2Hours" name="unit2Hours" class="unit-hours-input" min="0" value="0" required>
                                 </div>
                                 <div class="form-group col-span-4">
                                     <label for="unit2Syllabus">Syllabus Topics & Details <span class="required">*</span></label>
-                                    <textarea id="unit2Syllabus" name="unit2Syllabus" rows="4" placeholder="Enter detailed syllabus breakdown for Unit II..." required></textarea>
+                                    <textarea id="unit2Syllabus" name="unit2Syllabus" rows="4" placeholder="Enter syllabus topics..." required></textarea>
                                 </div>
                             </div>
                         </div>
@@ -199,15 +192,15 @@
                             <div class="unit-grid">
                                 <div class="form-group col-span-3">
                                     <label for="unit3Title">Unit Title <span class="required">*</span></label>
-                                    <input type="text" id="unit3Title" name="unit3Title" placeholder="e.g. Trees and Binary Search Trees" required>
+                                    <input type="text" id="unit3Title" name="unit3Title" placeholder="e.g. Trees and Graphs" required>
                                 </div>
                                 <div class="form-group">
                                     <label for="unit3Hours">Contact Hours <span class="required">*</span></label>
-                                    <input type="number" id="unit3Hours" name="unit3Hours" class="unit-hours-input" min="0" placeholder="9" required>
+                                    <input type="number" id="unit3Hours" name="unit3Hours" class="unit-hours-input" min="0" value="0" required>
                                 </div>
                                 <div class="form-group col-span-4">
                                     <label for="unit3Syllabus">Syllabus Topics & Details <span class="required">*</span></label>
-                                    <textarea id="unit3Syllabus" name="unit3Syllabus" rows="4" placeholder="Enter detailed syllabus breakdown for Unit III..." required></textarea>
+                                    <textarea id="unit3Syllabus" name="unit3Syllabus" rows="4" placeholder="Enter syllabus topics..." required></textarea>
                                 </div>
                             </div>
                         </div>
@@ -218,15 +211,15 @@
                             <div class="unit-grid">
                                 <div class="form-group col-span-3">
                                     <label for="unit4Title">Unit Title <span class="required">*</span></label>
-                                    <input type="text" id="unit4Title" name="unit4Title" placeholder="e.g. Graphs and Shortest Path Algorithms" required>
+                                    <input type="text" id="unit4Title" name="unit4Title" placeholder="e.g. Sorting and Searching" required>
                                 </div>
                                 <div class="form-group">
                                     <label for="unit4Hours">Contact Hours <span class="required">*</span></label>
-                                    <input type="number" id="unit4Hours" name="unit4Hours" class="unit-hours-input" min="0" placeholder="9" required>
+                                    <input type="number" id="unit4Hours" name="unit4Hours" class="unit-hours-input" min="0" value="0" required>
                                 </div>
                                 <div class="form-group col-span-4">
                                     <label for="unit4Syllabus">Syllabus Topics & Details <span class="required">*</span></label>
-                                    <textarea id="unit4Syllabus" name="unit4Syllabus" rows="4" placeholder="Enter detailed syllabus breakdown for Unit IV..." required></textarea>
+                                    <textarea id="unit4Syllabus" name="unit4Syllabus" rows="4" placeholder="Enter syllabus topics..." required></textarea>
                                 </div>
                             </div>
                         </div>
@@ -241,11 +234,11 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="unit5Hours">Contact Hours <span class="required">*</span></label>
-                                    <input type="number" id="unit5Hours" name="unit5Hours" class="unit-hours-input" min="0" placeholder="9" required>
+                                    <input type="number" id="unit5Hours" name="unit5Hours" class="unit-hours-input" min="0" value="0" required>
                                 </div>
                                 <div class="form-group col-span-4">
                                     <label for="unit5Syllabus">Syllabus Topics & Details <span class="required">*</span></label>
-                                    <textarea id="unit5Syllabus" name="unit5Syllabus" rows="4" placeholder="Enter detailed syllabus breakdown for Unit V..." required></textarea>
+                                    <textarea id="unit5Syllabus" name="unit5Syllabus" rows="4" placeholder="Enter syllabus topics..." required></textarea>
                                 </div>
                             </div>
                         </div>
@@ -253,19 +246,18 @@
 
                     <!-- Total Hours Counter -->
                     <div class="total-hours-container">
-                        <span>Total Theory Contact Hours:</span>
+                        <span>Total Contact Hours:</span>
                         <span id="totalHoursVal" class="hours-badge">0</span>
                     </div>
                 </section>
                 <br>
 
-                <!-- 5. Lab Course Section (List of Experiments) -->
+                <!-- 5. Lab Course Section -->
                 <section id="labSection" class="card conditional-section hidden">
                     <div class="card-header">
                         <span class="step-num">05</span>
                         <h2>List of Practical Experiments</h2>
                     </div>
-                    <p class="section-desc">List laboratory exercises, programming assignments, or practical tasks.</p>
                     
                     <div id="experimentsContainer" class="dynamic-list-container"></div>
                     
@@ -286,7 +278,6 @@
                         <span class="step-num">06</span>
                         <h2>Course Outcomes (COs)</h2>
                     </div>
-                    <p class="section-desc">Specify measurable knowledge and skills acquired upon course completion.</p>
                     
                     <div id="outcomesContainer" class="dynamic-list-container"></div>
                     
@@ -307,7 +298,6 @@
                         <span class="step-num">07</span>
                         <h2>Text Book(s)</h2>
                     </div>
-                    <p class="section-desc">Primary prescribed textbooks for the course.</p>
                     
                     <div id="textbooksContainer" class="dynamic-list-container"></div>
                     
@@ -328,7 +318,6 @@
                         <span class="step-num">08</span>
                         <h2>Reference Books & Web Resources</h2>
                     </div>
-                    <p class="section-desc">Secondary reference books, research papers, and online learning links.</p>
                     
                     <div id="referencesContainer" class="dynamic-list-container"></div>
                     
@@ -349,7 +338,6 @@
                         <span class="step-num">09</span>
                         <h2>Suggested Activities <span class="optional-badge">Optional</span></h2>
                     </div>
-                    <p class="section-desc">Seminars, active learning tasks, group projects, or whiteboarding.</p>
                     
                     <div id="activitiesContainer" class="dynamic-list-container"></div>
                     
@@ -370,7 +358,6 @@
                         <span class="step-num">10</span>
                         <h2>Suggested Evaluation Methods <span class="optional-badge">Optional</span></h2>
                     </div>
-                    <p class="section-desc">Continuous assessment models, quizzes, lab rubrics, or midterm tests.</p>
                     
                     <div id="evaluationsContainer" class="dynamic-list-container"></div>
                     
@@ -385,13 +372,11 @@
                 </section>
                 <br>
 
-                <!-- Error Message Banner -->
                 <div id="validationBanner" class="validation-banner hidden">
                     <span class="banner-icon">⚠️</span>
                     <span class="banner-text">Please resolve highlighted invalid fields before generating the document.</span>
                 </div>
 
-                <!-- Submit Floating Bar -->
                 <div class="submit-container">
                     <button type="submit" class="btn-generate" id="generateDocBtn">
                         <span class="btn-text">📄 Generate Publication DOCX</span>
@@ -400,7 +385,6 @@
                 </div>
             </form>
 
-            <!-- CLEAR VERTICAL SPACING BEFORE DOCUMENT PREVIEW -->
             <br><br>
 
             <!-- LIVE DOCUMENT PREVIEW CARD -->
@@ -410,20 +394,27 @@
                         <span class="icon">👁️</span>
                         <h2>Document Live Preview</h2>
                     </div>
-                    <button type="button" class="btn btn-spark" id="btnPreviewDownload">
-                        <span class="icon">📥</span> Download .DOCX
-                    </button>
                 </div>
                 <div class="preview-document-wrapper">
                     <div id="documentPreview" class="document-preview">
                         <!-- Dynamically rendered live preview -->
                     </div>
                 </div>
+
+                <!-- ACTION BUTTONS MOVED BELOW LIVE PREVIEW -->
+                <div class="preview-actions-bar">
+                    <button type="button" class="btn btn-gold-download" id="btnPreviewDownload">
+                        <span class="icon">📥</span> Download .DOCX
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="btnExportPDF">
+                        <span class="icon">📄</span> Export as PDF
+                    </button>
+                </div>
             </section>
         </main>
 
         <footer class="app-footer">
-            <p>&copy; 2026 Curriculum Syllabus Creator. Powered by Academic Excellence Studio.</p>
+            <p>Made with 💖 by Pugazhendhi B</p>
         </footer>
     </div>
 
@@ -431,22 +422,21 @@
     <div id="settingsModal" class="modal-overlay hidden">
         <div class="modal-card">
             <div class="modal-header">
-                <h2>⚙️ Document Typography Settings</h2>
+                <h2>⚙️ Document Settings</h2>
                 <button type="button" class="btn-close-modal" id="btnCloseSettings">&times;</button>
             </div>
             <div class="modal-body">
                 <div class="form-group">
                     <label for="docFontSelect">Select Document Font Family</label>
                     <select id="docFontSelect">
-                        <option value="Poppins" selected>Poppins (Modern Academic)</option>
-                        <option value="Times New Roman">Times New Roman (Classic Standard)</option>
+                        <option value="Poppins" selected>Poppins</option>
+                        <option value="Times New Roman">Times New Roman</option>
                         <option value="Calibri">Calibri</option>
                         <option value="Arial">Arial</option>
                         <option value="Georgia">Georgia</option>
                         <option value="Cambria">Cambria</option>
                         <option value="Garamond">Garamond</option>
                     </select>
-                    <span class="helper-text">Applies to both the Live Document Preview and exported Word (.docx) files.</span>
                 </div>
             </div>
             <div class="modal-footer">
@@ -458,6 +448,6 @@
     <!-- Notification Toast -->
     <div id="toast" class="toast hidden"></div>
 
-    <script src="./app.js?v=20260818_v11"></script>
+    <script src="./app.js?v=20260818_v13"></script>
 </body>
 </html>

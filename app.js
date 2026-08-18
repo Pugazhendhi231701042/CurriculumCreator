@@ -69,7 +69,7 @@ function parseRomanOrNumber(str) {
     return parseInt(s, 10) || 0;
 }
 
-// Clean bullet, box, tab, and numeric list prefixes completely from text
+// Clean bullet, box, tab, and numeric list prefixes completely from input fields
 function cleanPrefix(str) {
     if (!str) return "";
     return str.replace(/^[\u25AF\u25A0\u25A1●•\-\*\s\t]+/, "")
@@ -227,7 +227,7 @@ function setDynamicListValues(containerId, addBtnId, values) {
     const finalValues = cleanValues.length > 0 ? cleanValues : [""];
 
     finalValues.forEach((val, index) => {
-        const row = createRowElement(containerId, index + 1, val, "Enter item details...", false);
+        const row = createRowElement(containerId, index + 1, val, "Enter details...", false);
         container.appendChild(row);
     });
 }
@@ -313,8 +313,8 @@ function calculateTotalHours() {
             total += val;
         }
     }
-    if (totalHoursVal) totalHoursVal.textContent = total > 0 ? total : 45;
-    return total > 0 ? total : 45;
+    if (totalHoursVal) totalHoursVal.textContent = total;
+    return total;
 }
 
 if (courseTypeSelect) courseTypeSelect.addEventListener("change", handleCourseTypeChange);
@@ -337,7 +337,6 @@ document.querySelectorAll("#syllabusForm input, #syllabusForm textarea, #syllabu
     });
 });
 
-// Bind Branch input field for live updates
 const branchesInputEl = document.getElementById("branches");
 if (branchesInputEl) {
     branchesInputEl.addEventListener("input", () => {
@@ -413,7 +412,7 @@ if (form) {
 }
 
 // ==========================================================================
-// DOCX COMPILATION USING DOCX.JS (EXPLICIT POPPINS FONT ON ALL RUNS)
+// DOCX COMPILATION USING DOCX.JS (WITH BULLETS FOR OBJECTIVES & OUTCOMES)
 // ==========================================================================
 async function generateWordDocument() {
     if (!window.docx) {
@@ -435,7 +434,6 @@ async function generateWordDocument() {
         VerticalAlign
     } = window.docx;
 
-    // Helper to create TextRun with explicit font mandate
     function createRun(text, bold = false, size = 24) {
         return new TextRun({
             text: text,
@@ -453,7 +451,7 @@ async function generateWordDocument() {
     const tValue = document.getElementById("tValue")?.value || "0";
     const pValue = document.getElementById("pValue")?.value || "0";
     const cValue = document.getElementById("cValue")?.value || "0";
-    const branches = (document.getElementById("branches")?.value || "").trim() || "Common to All Branches";
+    const branches = (document.getElementById("branches")?.value || "").trim();
 
     const cellMargins = { top: 120, bottom: 120, left: 144, right: 144 };
     const tableBorders = {
@@ -559,7 +557,7 @@ async function generateWordDocument() {
         docChildren.push(new Paragraph({ spacing: { before: 120, after: 120 }, children: [] }));
     }
 
-    // Objectives Table
+    // Objectives Table (With Elegant Bullet Bullet Output in DOCX)
     const objectives = getListValues("objectivesContainer");
     if (objectives.length > 0) {
         addTableSpacer();
@@ -577,7 +575,7 @@ async function generateWordDocument() {
             objectiveRows.push(new TableRow({
                 children: [
                     new TableCell({
-                        children: [new Paragraph({ children: [createRun(cleanPrefix(obj), false)], alignment: AlignmentType.LEFT })],
+                        children: [new Paragraph({ children: [createRun(`●  ${cleanPrefix(obj)}`, false)], alignment: AlignmentType.LEFT })],
                         margins: cellMargins, width: { size: 10204, type: WidthType.DXA }
                     })
                 ]
@@ -586,7 +584,7 @@ async function generateWordDocument() {
         docChildren.push(new Table({ width: { size: 10204, type: WidthType.DXA }, borders: tableBorders, rows: objectiveRows }));
     }
 
-    // Theory Syllabus Units Table (With Total Hours Calculation Fix)
+    // Theory Syllabus Units Table
     if (courseType === "Theory" || courseType === "Lab Oriented Theory") {
         addTableSpacer();
         const unitTableRows = [];
@@ -598,7 +596,7 @@ async function generateWordDocument() {
             const unitSyllabusEl = document.getElementById(`unit${i}Syllabus`);
 
             const unitTitle = unitTitleEl ? unitTitleEl.value.trim() : "";
-            const unitHours = unitHoursEl ? unitHoursEl.value : "9";
+            const unitHours = unitHoursEl ? unitHoursEl.value : "0";
             const rawSyllabus = unitSyllabusEl ? unitSyllabusEl.value.trim() : "";
             const roman = getRomanNumeral(i);
             
@@ -633,8 +631,6 @@ async function generateWordDocument() {
                 ]
             }));
         }
-
-        if (computedTotalHours === 0) computedTotalHours = 45;
 
         unitTableRows.push(new TableRow({
             children: [
@@ -689,7 +685,7 @@ async function generateWordDocument() {
         }
     }
 
-    // Course Outcomes Table
+    // Course Outcomes Table (With Elegant Bullet Output in DOCX)
     const outcomes = getListValues("outcomesContainer");
     if (outcomes.length > 0) {
         addTableSpacer();
@@ -716,7 +712,7 @@ async function generateWordDocument() {
             outcomeRows.push(new TableRow({
                 children: [
                     new TableCell({
-                        children: [new Paragraph({ children: [createRun(cleanPrefix(out), false)], alignment: AlignmentType.LEFT })],
+                        children: [new Paragraph({ children: [createRun(`●  ${cleanPrefix(out)}`, false)], alignment: AlignmentType.LEFT })],
                         margins: cellMargins, width: { size: 10204, type: WidthType.DXA }
                     })
                 ]
@@ -817,12 +813,90 @@ async function generateWordDocument() {
 }
 
 // ==========================================================================
-// RENDER LIVE DOCUMENT PREVIEW (Matching Word DOCX layout & Font Settings)
+// EXPORT LIVE PREVIEW TO PDF FUNCTION
+// ==========================================================================
+function exportToPDF() {
+    const previewEl = document.getElementById("documentPreview");
+    if (!previewEl) {
+        showToast("No live preview available to export.", "error");
+        return;
+    }
+
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+        showToast("Please allow popups to export the PDF document.", "error");
+        return;
+    }
+
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Curriculum Syllabus Document</title>
+            <style>
+                @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+                body {
+                    font-family: '${selectedFont}', 'Poppins', sans-serif;
+                    margin: 0;
+                    padding: 20px;
+                    color: #000000;
+                    background: #FFFFFF;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 1rem;
+                    page-break-inside: avoid;
+                }
+                th, td {
+                    border: 1px solid #000000;
+                    padding: 6px 10px;
+                    font-size: 11pt;
+                    line-height: 1.4;
+                }
+                th.section-title-cell, td.section-title-cell {
+                    text-align: left !important;
+                    font-weight: bold;
+                }
+                td.subject-title-cell {
+                    text-align: center !important;
+                    font-weight: bold;
+                }
+                .unit-header-cell {
+                    font-weight: bold;
+                    text-transform: uppercase;
+                }
+                @media print {
+                    @page {
+                        size: A4 portrait;
+                        margin: 15mm;
+                    }
+                    body {
+                        padding: 0;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            ${previewEl.innerHTML}
+            <script>
+                window.onload = function() {
+                    window.print();
+                    setTimeout(function() { window.close(); }, 750);
+                };
+            <\/script>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+}
+
+// ==========================================================================
+// RENDER LIVE DOCUMENT PREVIEW (WITH BULLETS FOR OBJECTIVES & OUTCOMES)
 // ==========================================================================
 function renderLiveDocumentPreview() {
     const previewContainer = document.getElementById("documentPreview");
     const previewCard = document.getElementById("previewCard");
-    const btnAIDownloadDocx = document.getElementById("btnAIDownloadDocx");
     if (!previewContainer) return;
 
     previewContainer.style.fontFamily = `'${selectedFont}', Poppins, sans-serif`;
@@ -835,7 +909,7 @@ function renderLiveDocumentPreview() {
     const tValue = document.getElementById("tValue")?.value || "0";
     const pValue = document.getElementById("pValue")?.value || "0";
     const cValue = document.getElementById("cValue")?.value || "0";
-    const branches = (document.getElementById("branches")?.value || "").trim() || "Common to All Branches";
+    const branches = (document.getElementById("branches")?.value || "").trim();
 
     const objectives = getListValues("objectivesContainer");
     const outcomes = getListValues("outcomesContainer");
@@ -863,7 +937,7 @@ function renderLiveDocumentPreview() {
                 <td style="text-align: center;">${pValue}</td>
                 <td style="text-align: center;">${cValue}</td>
             </tr>
-            <tr><td colspan="7"><strong>Branches:</strong> ${branches}</td></tr>
+            ${branches ? `<tr><td colspan="7"><strong>Branches:</strong> ${branches}</td></tr>` : ''}
         </table>
     `;
 
@@ -871,7 +945,7 @@ function renderLiveDocumentPreview() {
         html += `
             <table>
                 <tr><th class="section-title-cell">Objectives:</th></tr>
-                ${objectives.map(o => `<tr><td>${cleanPrefix(o)}</td></tr>`).join('')}
+                ${objectives.map(o => `<tr><td>● ${cleanPrefix(o)}</td></tr>`).join('')}
             </table>
         `;
     }
@@ -882,7 +956,7 @@ function renderLiveDocumentPreview() {
         for (let i = 1; i <= 5; i++) {
             const roman = getRomanNumeral(i);
             const uTitle = (document.getElementById(`unit${i}Title`)?.value || "").trim();
-            const uHours = (document.getElementById(`unit${i}Hours`)?.value || "9").trim();
+            const uHours = (document.getElementById(`unit${i}Hours`)?.value || "0").trim();
             const rawSyllabus = (document.getElementById(`unit${i}Syllabus`)?.value || "").trim();
             computedHrs += parseInt(uHours, 10) || 0;
 
@@ -899,7 +973,6 @@ function renderLiveDocumentPreview() {
                 </tr>
             `;
         }
-        if (computedHrs === 0) computedHrs = 45;
         html += `
             <tr>
                 <td colspan="3"><strong>Total Contact Hours: ${computedHrs}</strong></td>
@@ -921,7 +994,7 @@ function renderLiveDocumentPreview() {
             <table>
                 <tr><th class="section-title-cell">Course Outcomes:</th></tr>
                 <tr><td><em>On completion of the course, students will be able to</em></td></tr>
-                ${outcomes.map(o => `<tr><td>${cleanPrefix(o)}</td></tr>`).join('')}
+                ${outcomes.map(o => `<tr><td>● ${cleanPrefix(o)}</td></tr>`).join('')}
             </table>
         `;
     }
@@ -941,7 +1014,6 @@ function renderLiveDocumentPreview() {
 
     previewContainer.innerHTML = html;
     if (previewCard) previewCard.classList.remove("hidden");
-    if (btnAIDownloadDocx) btnAIDownloadDocx.classList.remove("hidden");
 }
 
 // ==========================================================================
@@ -1113,7 +1185,7 @@ function parseFullSyllabusText() {
         const pasteEl = document.getElementById("quickPasteArea");
         const text = pasteEl ? pasteEl.value.trim() : "";
         if (!text) {
-            showToast("Please paste some syllabus content first.", "error");
+            showToast("Please paste syllabus content first.", "error");
             return;
         }
 
@@ -1122,7 +1194,7 @@ function parseFullSyllabusText() {
         let subjectCode = "";
         let subjectName = "";
         let category = "";
-        let l = "3", t = "0", p = "0", c = "3";
+        let l = "0", t = "0", p = "0", c = "0";
         let branches = "";
         
         let objectives = [];
@@ -1134,11 +1206,11 @@ function parseFullSyllabusText() {
         let references = [];
         
         let units = [
-            { title: "", hours: "9", syllabus: [] },
-            { title: "", hours: "9", syllabus: [] },
-            { title: "", hours: "9", syllabus: [] },
-            { title: "", hours: "9", syllabus: [] },
-            { title: "", hours: "9", syllabus: [] }
+            { title: "", hours: "0", syllabus: [] },
+            { title: "", hours: "0", syllabus: [] },
+            { title: "", hours: "0", syllabus: [] },
+            { title: "", hours: "0", syllabus: [] },
+            { title: "", hours: "0", syllabus: [] }
         ];
 
         let currentSection = "";
@@ -1157,7 +1229,7 @@ function parseFullSyllabusText() {
                     l = tabCells[3];
                     t = tabCells[4];
                     p = tabCells[5] || "0";
-                    c = tabCells[6] || "3";
+                    c = tabCells[6] || "0";
                     break;
                 }
             }
@@ -1174,7 +1246,7 @@ function parseFullSyllabusText() {
                         l = valCells[3];
                         t = valCells[4] || "0";
                         p = valCells[5] || "0";
-                        c = valCells[6] || "3";
+                        c = valCells[6] || "0";
                         break;
                     }
                 }
@@ -1287,7 +1359,7 @@ function parseFullSyllabusText() {
                     currentSection = `unit${unitNum}`;
                     let remainder = unitMatch[2].trim();
                     let title = "";
-                    let hours = "9";
+                    let hours = "0";
 
                     if (remainder.includes("\t")) {
                         const parts = remainder.split(/\t+/).map(s => s.trim()).filter(Boolean);
@@ -1416,8 +1488,8 @@ function parseFullSyllabusText() {
         const feedbackStats = document.getElementById("feedbackStats");
         if (parserFeedback && feedbackStats) {
             feedbackStats.innerHTML = `
-                <span class="stat-chip">Subject Code: <strong>${subjectCode || 'HS19151'}</strong></span>
-                <span class="stat-chip">Subject Name: <strong>${subjectName || 'TECHNICAL ENGLISH'}</strong></span>
+                <span class="stat-chip">Subject Code: <strong>${subjectCode || '---'}</strong></span>
+                <span class="stat-chip">Subject Name: <strong>${subjectName || '---'}</strong></span>
                 <span class="stat-chip">Credits: <strong>${l}-${t}-${p}-${c}</strong></span>
                 <span class="stat-chip">Branches: <strong>${elBranches ? elBranches.value : 'Common to All'}</strong></span>
                 <span class="stat-chip">Units Extracted: <strong>${filledUnits}/5</strong></span>
@@ -1429,78 +1501,10 @@ function parseFullSyllabusText() {
             parserFeedback.classList.remove("hidden");
         }
 
-        if (!branches && elBranches) {
-            showToast("Branch details not specified in text. Set to 'Common to All Branches' by default.", "info");
-        } else {
-            showToast(`Successfully extracted ${references.length} reference books, ${outcomes.length} outcomes, and syllabus units!`, "success");
-        }
+        showToast(`Parsed syllabus fields successfully!`, "success");
     } catch (err) {
         console.error("Syllabus parser error:", err);
         showToast(`Failed to parse text: ${err.message}`, "error");
-    }
-}
-
-function loadSampleSyllabusText() {
-    const sampleText = `Subject Code\tSubject Name (Theory course)\tCategory\tL\tT\tP\tC
-HS19151\tTECHNICAL ENGLISH\tHS\t2\t1\t0\t3
-
-Objectives:
-\tTo enable learners to acquire basic proficiency in English reading and listening.
-\tTo write in English precisely and effectively.
-\tTo speak flawlessly in all kinds of communicative contexts.
-
-UNIT-I\tVOCABULARY BUILDING\t9
-The concept of word formation - Root words from foreign languages and their use in English - Acquaintance with prefixes and suffixes from foreign languages in English to form derivatives - Synonyms, antonyms, and standard abbreviations. Compound words – abbreviation – single word substitution – Listening: Listening comprehension, listening to motivational speeches, podcasts and poetry. Speaking: Short talks on incidents - place of visit – admiring
-personalities, etc.
-
-UNIT-II\tBASIC WRITING SKILLS\t9
-Sentence structures - Use of phrases and clauses in sentences - punctuation - coherence - Organizing principles of paragraphs in documents - Techniques for writing precisely. Reading & Writing – Free writing – paragraphs - article reading and writing criticism - change of tense forms in short text or story – inferential reading – rewrite or interpret text
-- prepare questions based on the text. Speaking: Everyday situations – conversations and dialogues, speaking for and
-against.
-
-UNIT-III\tGRAMMAR AND LANGUAGE DEVELOPMENT\t9
-Subject-verb agreement- Noun-pronoun agreement - Articles – Prepositions – Redundancies. Reading & Writing: Read from innovation and ideas that changed the world, newspaper column writing – Speaking: Demonstrative speaking
-practice using visual aids (charts, graphs, maps, pictures, etc.)
-
-UNIT-IV\tWRITING FOR FORMAL PRESENTATION\t9
-Nature and Style of sensible Writing - Describing – Defining – Classifying - Providing examples or evidence - Writing introduction and conclusion. Reading & Writing – Read from Literary pieces – identify different parts text – Difference between print and digital writing. Writing: Recommendations - Foreword - Review of book. Speaking- Formal
-Presentations – Debate on social issues/taboos and solutions.
-
-UNIT-V\tEXTENDED WRITING AND SPEAKING\t9
-Writing: Précis writing – Essay writing – workplace communication: Resume – Business letters and emails – Proposals. Speaking: Panel discussion – reporting an event – mock interview – Master Ceremony.
-
-\tTotal Contact Hours\t:\t45
-
-Course Outcomes:
-On completion of the course students will be able to
-\tDiscuss and respond to the listening content.
-\tRead and comprehend different texts and appreciate them.
-\tUnderstand structures and techniques of precise writing.
-\tAnalyze different genres of communication and get familiarized with new words, phrases, and sentence structures.
-\tWrite and speak appropriately in varied formal and informal contexts.
-
-Text Book(s):
-1\tEnglish for Technologists & Engineers, Orient BlackSwan Publications, Chennai, 2012.
-
-Reference Books(s):
-1\tMeenakshi Raman & Sangeeta Sharma, Technical Communication, Oxford University Press.
-2\tBushan Kumar, Effective Communication Skills, Khanna Publishing House, Delhi.
-3\tPushplata, Sanjay Kumar, Communication Skills, Oxford University Press.
-4\tMichael Swan, Practical English Usage, Oxford University Press, 1995.
-5\tF.T. Wood, Remedial English Grammar, Macmillan, 2007.
-6\tWilliam Zinsser, On Writing Well, Harper Resource Book, 2001.
-7\tLiz Hamp-Lyons and Ben Heasly, Study Writing, Cambridge University Press, 2006.
-8\tExercises in Spoken English, Parts I-III, CIEFL, Hyderabad, Oxford University Press.
-
-CO - PO – PSO matrices of course
-
-Correlation levels 1, 2 or 3 are as defined below:
-1: Slight (Low)\t2: Moderate (Medium)\t3: Substantial (High)\tNo correlation : “-“`;
-
-    const area = document.getElementById("quickPasteArea");
-    if (area) {
-        area.value = sampleText;
-        showToast("Technical English tabbed sample syllabus loaded! Click 'AI Parse & Generate Preview'.", "success");
     }
 }
 
@@ -1528,14 +1532,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnQuickParse = document.getElementById("btnQuickParse");
     if (btnQuickParse) btnQuickParse.addEventListener("click", parseFullSyllabusText);
 
-    const btnLoadSample = document.getElementById("btnLoadSample");
-    if (btnLoadSample) btnLoadSample.addEventListener("click", loadSampleSyllabusText);
-
-    const btnAIDownloadDocx = document.getElementById("btnAIDownloadDocx");
-    if (btnAIDownloadDocx) btnAIDownloadDocx.addEventListener("click", generateWordDocument);
-
     const btnPreviewDownload = document.getElementById("btnPreviewDownload");
     if (btnPreviewDownload) btnPreviewDownload.addEventListener("click", generateWordDocument);
+
+    const btnExportPDF = document.getElementById("btnExportPDF");
+    if (btnExportPDF) btnExportPDF.addEventListener("click", exportToPDF);
 
     const formEl = document.getElementById("syllabusForm");
     if (formEl) {
