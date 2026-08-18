@@ -6,13 +6,13 @@
     <title>Curriculum Syllabus Creator | Professional Academic Syllabus Generator</title>
     <meta name="description" content="A premium purple-and-white academic web application to parse, structure, and generate professional Microsoft Word (.docx) course syllabi.">
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="Assets/rec.ico">
+    <link rel="icon" type="image/x-icon" href="./Assets/rec.ico">
     <!-- Google Fonts: Poppins, Outfit and Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="styles.css">
+    <!-- Custom Stylesheet with Cache Busting -->
+    <link rel="stylesheet" href="./styles.css?v=20260818_v10">
     <!-- docx.js Library (IIFE Version for Browser) -->
     <script src="https://cdn.jsdelivr.net/npm/docx@8.2.4/build/index.iife.js"></script>
     <!-- SheetJS Library to read/write Excel in the browser -->
@@ -36,7 +36,7 @@
             </div>
 
             <div class="logo">
-                <img src="Assets/logo.png" alt="Curriculum Creator Logo" class="header-logo">
+                <img src="./Assets/logo.png" alt="Curriculum Creator Logo" class="header-logo">
                 <h1>Curriculum Creator</h1>
             </div>
             <p class="subtitle">Design academic syllabi manually or paste raw content for instant AI auto-detection, live preview, and Word (.docx) download.</p>
@@ -528,6 +528,6 @@
     <!-- Notification Toast -->
     <div id="toast" class="toast hidden"></div>
 
-    <script src="app.js?v=8"></script>
+    <script src="./app.js?v=20260818_v10"></script>
 </body>
 </html>
