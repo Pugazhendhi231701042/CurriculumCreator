@@ -70,7 +70,7 @@ function parseRomanOrNumber(str) {
 }
 
 function cleanPrefix(str) {
-    return str.replace(/^[\u25AF\u25A0\u25A1●•\-\*\s]+/, "")
+    return str.replace(/^[\u25AF\u25A0\u25A1●•\-\*\s\t]+/, "")
               .replace(/^(\d+[\.\)\s\t]+|\[CO\d+\]|CO\d+[\:\-\s]+)\s*/i, "")
               .trim();
 }
@@ -428,14 +428,14 @@ async function generateWordDocument() {
     } = window.docx;
 
     const courseType = courseTypeSelect ? courseTypeSelect.value : "Theory";
-    const subjectCode = (document.getElementById("subjectCode").value || "").trim().toUpperCase();
-    const subjectName = (document.getElementById("subjectName").value || "").trim();
-    const category = (document.getElementById("category").value || "").trim();
-    const lValue = document.getElementById("lValue").value || "0";
-    const tValue = document.getElementById("tValue").value || "0";
-    const pValue = document.getElementById("pValue").value || "0";
-    const cValue = document.getElementById("cValue").value || "0";
-    const branches = (document.getElementById("branches").value || "").trim();
+    const subjectCode = (document.getElementById("subjectCode")?.value || "").trim().toUpperCase();
+    const subjectName = (document.getElementById("subjectName")?.value || "").trim();
+    const category = (document.getElementById("category")?.value || "").trim();
+    const lValue = document.getElementById("lValue")?.value || "0";
+    const tValue = document.getElementById("tValue")?.value || "0";
+    const pValue = document.getElementById("pValue")?.value || "0";
+    const cValue = document.getElementById("cValue")?.value || "0";
+    const branches = (document.getElementById("branches")?.value || "").trim();
 
     const cellMargins = { top: 120, bottom: 120, left: 144, right: 144 };
     const tableBorders = {
@@ -1116,7 +1116,7 @@ function handleExcelUpload(event) {
 }
 
 // ==========================================================================
-// SUPER-SMART HEURISTIC PARSER ENGINE (Resilient to misplaced & stacked text)
+// UNIVERSAL MULTI-FORMAT HEURISTIC PARSER ENGINE (Tabbed, Stacked & Key-Value)
 // ==========================================================================
 function parseFullSyllabusText() {
     try {
@@ -1153,26 +1153,76 @@ function parseFullSyllabusText() {
 
         let currentSection = "";
 
-        for (let i = 0; i < lines.length - 10; i++) {
-            if (lines[i].toLowerCase().includes("subject code") &&
-                lines[i+1].toLowerCase().includes("subject name") &&
-                lines[i+2].toLowerCase().includes("category")) {
-                
-                let valueIdx = i + 3;
-                while (valueIdx < lines.length && (lines[valueIdx].toUpperCase() === "L" || lines[valueIdx].toUpperCase() === "T" || lines[valueIdx].toUpperCase() === "P" || lines[valueIdx].toUpperCase() === "C")) {
-                    valueIdx++;
-                }
+        // ----------------------------------------------------------------------
+        // PASS 1: TAB-SEPARATED OR MULTI-SPACE CELL PARSING FOR BASIC INFO TABLE
+        // ----------------------------------------------------------------------
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            if (!line) continue;
 
-                if (valueIdx + 6 < lines.length) {
-                    subjectCode = lines[valueIdx];
-                    subjectName = lines[valueIdx + 1].replace(/\s*\(Theory course\)/i, "");
-                    category = lines[valueIdx + 2];
-                    l = lines[valueIdx + 3];
-                    t = lines[valueIdx + 4];
-                    p = lines[valueIdx + 5];
-                    c = lines[valueIdx + 6];
+            // Pattern 1: Tab-separated single line containing Subject Code and Subject Name values
+            // e.g. "HS19151	TECHNICAL ENGLISH	HS	2	1	0	3"
+            const tabCells = line.split(/\t+/).map(s => s.trim()).filter(Boolean);
+            if (tabCells.length >= 5) {
+                // Check if first cell looks like a Subject Code e.g. HS19151, CS301
+                const firstCell = tabCells[0];
+                if (/^[A-Za-z0-9\-]{3,10}$/.test(firstCell) && !firstCell.toLowerCase().includes("subject")) {
+                    subjectCode = tabCells[0];
+                    subjectName = tabCells[1].replace(/\s*\(Theory course\)/i, "");
+                    category = tabCells[2];
+                    l = tabCells[3];
+                    t = tabCells[4];
+                    p = tabCells[5] || "0";
+                    c = tabCells[6] || "3";
+                    break;
                 }
-                break;
+            }
+
+            // Pattern 2: Tabbed header followed by values on next line
+            if (line.toLowerCase().includes("subject code") && line.includes("\t")) {
+                let nextIdx = i + 1;
+                while (nextIdx < lines.length && !lines[nextIdx]) nextIdx++;
+                if (nextIdx < lines.length) {
+                    const valCells = lines[nextIdx].split(/\t+/).map(s => s.trim()).filter(Boolean);
+                    if (valCells.length >= 4) {
+                        subjectCode = valCells[0];
+                        subjectName = valCells[1].replace(/\s*\(Theory course\)/i, "");
+                        category = valCells[2];
+                        l = valCells[3];
+                        t = valCells[4] || "0";
+                        p = valCells[5] || "0";
+                        c = valCells[6] || "3";
+                        break;
+                    }
+                }
+            }
+        }
+
+        // ----------------------------------------------------------------------
+        // PASS 2: STACKED MULTI-LINE OR COLON KEY-VALUE SCAN FALLBACK
+        // ----------------------------------------------------------------------
+        if (!subjectCode) {
+            for (let i = 0; i < lines.length - 10; i++) {
+                if (lines[i].toLowerCase().includes("subject code") &&
+                    lines[i+1].toLowerCase().includes("subject name") &&
+                    lines[i+2].toLowerCase().includes("category")) {
+                    
+                    let valueIdx = i + 3;
+                    while (valueIdx < lines.length && (lines[valueIdx].toUpperCase() === "L" || lines[valueIdx].toUpperCase() === "T" || lines[valueIdx].toUpperCase() === "P" || lines[valueIdx].toUpperCase() === "C")) {
+                        valueIdx++;
+                    }
+
+                    if (valueIdx + 6 < lines.length) {
+                        subjectCode = lines[valueIdx];
+                        subjectName = lines[valueIdx + 1].replace(/\s*\(Theory course\)/i, "");
+                        category = lines[valueIdx + 2];
+                        l = lines[valueIdx + 3];
+                        t = lines[valueIdx + 4];
+                        p = lines[valueIdx + 5];
+                        c = lines[valueIdx + 6];
+                    }
+                    break;
+                }
             }
         }
 
@@ -1201,12 +1251,29 @@ function parseFullSyllabusText() {
             }
         }
 
+        // ----------------------------------------------------------------------
+        // PASS 3: SECTION SEGMENTATION & TABBED UNIT / ITEM PARSING
+        // ----------------------------------------------------------------------
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i];
             if (!line) continue;
             const lower = line.toLowerCase();
 
+            // Stop parsing if we reach Matrix / Correlation tables at the bottom
+            if (lower.startsWith("co - po") || lower.startsWith("co-po") || lower.includes("matrices of course") || lower.includes("correlation levels")) {
+                break;
+            }
+
             if (lower === "subject code" || lower.startsWith("subject name") || lower === "category" || lower === "l" || lower === "t" || lower === "p" || lower === "c") {
+                continue;
+            }
+
+            // Skip table header row if tabbed
+            if (line.includes("\t") && lower.includes("subject code")) {
+                continue;
+            }
+            // Skip data row if we already parsed subject code from it
+            if (subjectCode && line.includes(subjectCode)) {
                 continue;
             }
 
@@ -1239,14 +1306,38 @@ function parseFullSyllabusText() {
                 continue;
             }
 
+            // Check for Unit Header (Tabbed or Standard)
+            // e.g. "UNIT-I	VOCABULARY BUILDING	9" or "UNIT I: INTRODUCTION"
             const unitMatch = line.match(/^\s*(?:UNIT|MODULE)[\-–—:\s]*([I|V|X\d]+|\d+)\b(.*)$/i);
             if (unitMatch) {
                 const unitNum = parseRomanOrNumber(unitMatch[1]);
                 if (unitNum >= 1 && unitNum <= 5) {
                     currentSection = `unit${unitNum}`;
-                    let title = unitMatch[2].trim();
+                    let remainder = unitMatch[2].trim();
+                    let title = "";
                     let hours = "9";
 
+                    // Handle tabbed unit header e.g. "UNIT-I \t VOCABULARY BUILDING \t 9"
+                    if (remainder.includes("\t")) {
+                        const parts = remainder.split(/\t+/).map(s => s.trim()).filter(Boolean);
+                        if (parts.length >= 2) {
+                            title = parts[0];
+                            hours = parts[1];
+                        } else if (parts.length === 1) {
+                            if (/^\d+$/.test(parts[0])) hours = parts[0];
+                            else title = parts[0];
+                        }
+                    } else if (remainder) {
+                        const hMatch = remainder.match(/(.*?)(?:(\d+)\s*(?:hours?|hrs?|periods?|\)?)\s*)$/i);
+                        if (hMatch && hMatch[1].trim()) {
+                            title = hMatch[1].replace(/[\:–—\-]+$/, "").trim();
+                            hours = hMatch[2];
+                        } else {
+                            title = remainder.replace(/[\:–—\-]+$/, "").trim();
+                        }
+                    }
+
+                    // Check next lines if title/hours are missing
                     if (!title && i + 1 < lines.length && !lines[i + 1].match(/^\d+$/) && !lines[i + 1].toLowerCase().startsWith("unit")) {
                         i++;
                         title = lines[i];
@@ -1255,12 +1346,6 @@ function parseFullSyllabusText() {
                     if (i + 1 < lines.length && lines[i + 1].match(/^\d+$/)) {
                         i++;
                         hours = lines[i];
-                    } else if (title) {
-                        const hMatch = title.match(/(.*?)(?:(\d+)\s*(?:hours?|hrs?|periods?|\)?)\s*)$/i);
-                        if (hMatch && hMatch[1].trim()) {
-                            title = hMatch[1].replace(/[\:–—\-]+$/, "").trim();
-                            hours = hMatch[2];
-                        }
                     }
 
                     units[unitNum - 1].title = title;
@@ -1294,6 +1379,7 @@ function parseFullSyllabusText() {
             }
         }
 
+        // Apply parsed fields to DOM controls
         const elCode = document.getElementById("subjectCode");
         const elName = document.getElementById("subjectName");
         const elCat = document.getElementById("category");
@@ -1354,7 +1440,8 @@ function parseFullSyllabusText() {
         if (parserFeedback && feedbackStats) {
             feedbackStats.innerHTML = `
                 <span class="stat-chip">Subject Code: <strong>${subjectCode || 'HS19151'}</strong></span>
-                <span class="stat-chip">Classification: <strong>${detectedType}</strong></span>
+                <span class="stat-chip">Subject Name: <strong>${subjectName || 'TECHNICAL ENGLISH'}</strong></span>
+                <span class="stat-chip">Credits: <strong>${l}-${t}-${p}-${c}</strong></span>
                 <span class="stat-chip">Units Extracted: <strong>${filledUnits}/5</strong></span>
                 <span class="stat-chip">Objectives: <strong>${objectives.length}</strong></span>
                 <span class="stat-chip">Outcomes: <strong>${outcomes.length}</strong></span>
@@ -1371,103 +1458,63 @@ function parseFullSyllabusText() {
     }
 }
 
+// Sample text matching the exact tab-separated format from the user's prompt
 function loadSampleSyllabusText() {
-    const sampleText = `Subject Code
-Subject Name (Theory course)
-Category
-L
-T
-P
-C
-HS19151
-TECHNICAL ENGLISH
-HS
-2
-1
-0
-3
-
+    const sampleText = `Subject Code\tSubject Name (Theory course)\tCategory\tL\tT\tP\tC
+HS19151\tTECHNICAL ENGLISH\tHS\t2\t1\t0\t3
 
 Objectives:
-▯
-To enable learners to acquire basic proficiency in English reading and listening.
-▯
-To write in English precisely and effectively.
-▯
-To speak flawlessly in all kinds of communicative contexts.
+\tTo enable learners to acquire basic proficiency in English reading and listening.
+\tTo write in English precisely and effectively.
+\tTo speak flawlessly in all kinds of communicative contexts.
 
-
-UNIT-I
-VOCABULARY BUILDING
-9
+UNIT-I\tVOCABULARY BUILDING\t9
 The concept of word formation - Root words from foreign languages and their use in English - Acquaintance with prefixes and suffixes from foreign languages in English to form derivatives - Synonyms, antonyms, and standard abbreviations. Compound words – abbreviation – single word substitution – Listening: Listening comprehension, listening to motivational speeches, podcasts and poetry. Speaking: Short talks on incidents - place of visit – admiring personalities, etc.
 
-UNIT-II
-BASIC WRITING SKILLS
-9
+UNIT-II\tBASIC WRITING SKILLS\t9
 Sentence structures - Use of phrases and clauses in sentences - punctuation - coherence - Organizing principles of paragraphs in documents - Techniques for writing precisely. Reading & Writing – Free writing – paragraphs - article reading and writing criticism - change of tense forms in short text or story – inferential reading – rewrite or interpret text - prepare questions based on the text. Speaking: Everyday situations – conversations and dialogues, speaking for and against.
 
-UNIT-III
-GRAMMAR AND LANGUAGE DEVELOPMENT
-9
+UNIT-III\tGRAMMAR AND LANGUAGE DEVELOPMENT\t9
 Subject-verb agreement- Noun-pronoun agreement - Articles – Prepositions – Redundancies. Reading & Writing: Read from innovation and ideas that changed the world, newspaper column writing – Speaking: Demonstrative speaking practice using visual aids (charts, graphs, maps, pictures, etc.)
 
-UNIT-IV
-WRITING FOR FORMAL PRESENTATION
-9
+UNIT-IV\tWRITING FOR FORMAL PRESENTATION\t9
 Nature and Style of sensible Writing - Describing – Defining – Classifying - Providing examples or evidence - Writing introduction and conclusion. Reading & Writing – Read from Literary pieces – identify different parts text – Difference between print and digital writing. Writing: Recommendations - Foreword - Review of book. Speaking- Formal Presentations – Debate on social issues/taboos and solutions.
 
-UNIT-V
-EXTENDED WRITING AND SPEAKING
-9
+UNIT-V\tEXTENDED WRITING AND SPEAKING\t9
 Writing: Précis writing – Essay writing – workplace communication: Resume – Business letters and emails – Proposals. Speaking: Panel discussion – reporting an event – mock interview – Master Ceremony.
 
-
-Total Contact Hours
-:
-45
+\tTotal Contact Hours\t:\t45
 
 Course Outcomes:
 On completion of the course students will be able to
-▯
-Discuss and respond to the listening content.
-▯
-Read and comprehend different texts and appreciate them.
-▯
-Understand structures and techniques of precise writing.
-▯
-Analyze different genres of communication and get familiarized with new words, phrases, and sentence structures.
-▯
-Write and speak appropriately in varied formal and informal contexts.
-
+\tDiscuss and respond to the listening content.
+\tRead and comprehend different texts and appreciate them.
+\tUnderstand structures and techniques of precise writing.
+\tAnalyze different genres of communication and get familiarized with new words, phrases, and sentence structures.
+\tWrite and speak appropriately in varied formal and informal contexts.
 
 Text Book(s):
-1
-English for Technologists & Engineers, Orient BlackSwan Publications, Chennai, 2012.
-
+1\tEnglish for Technologists & Engineers, Orient BlackSwan Publications, Chennai, 2012.
 
 Reference Books(s):
-1
-Meenakshi Raman & Sangeeta Sharma, Technical Communication, Oxford University Press.
-2
-Bushan Kumar, Effective Communication Skills, Khanna Publishing House, Delhi.
-3
-Pushplata, Sanjay Kumar, Communication Skills, Oxford University Press.
-4
-Michael Swan, Practical English Usage, Oxford University Press, 1995.
-5
-F.T. Wood, Remedial English Grammar, Macmillan, 2007.
-6
-William Zinsser, On Writing Well, Harper Resource Book, 2001.
-7
-Liz Hamp-Lyons and Ben Heasly, Study Writing, Cambridge University Press, 2006.
-8
-Exercises in Spoken English, Parts I-III, CIEFL, Hyderabad, Oxford University Press.`;
+1\tMeenakshi Raman & Sangeeta Sharma, Technical Communication, Oxford University Press.
+2\tBushan Kumar, Effective Communication Skills, Khanna Publishing House, Delhi.
+3\tPushplata, Sanjay Kumar, Communication Skills, Oxford University Press.
+4\tMichael Swan, Practical English Usage, Oxford University Press, 1995.
+5\tF.T. Wood, Remedial English Grammar, Macmillan, 2007.
+6\tWilliam Zinsser, On Writing Well, Harper Resource Book, 2001.
+7\tLiz Hamp-Lyons and Ben Heasly, Study Writing, Cambridge University Press, 2006.
+8\tExercises in Spoken English, Parts I-III, CIEFL, Hyderabad, Oxford University Press.
+
+CO - PO – PSO matrices of course
+
+Correlation levels 1, 2 or 3 are as defined below:
+1: Slight (Low)\t2: Moderate (Medium)\t3: Substantial (High)\tNo correlation : “-“`;
 
     const area = document.getElementById("quickPasteArea");
     if (area) {
         area.value = sampleText;
-        showToast("Technical English sample syllabus loaded! Click 'AI Parse & Generate Preview'.", "success");
+        showToast("Technical English tabbed sample syllabus loaded! Click 'AI Parse & Generate Preview'.", "success");
     }
 }
 
@@ -1504,7 +1551,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const btnPreviewDownload = document.getElementById("btnPreviewDownload");
     if (btnPreviewDownload) btnPreviewDownload.addEventListener("click", generateWordDocument);
 
-    // If on manual.html, auto-render live preview on load
     const formEl = document.getElementById("syllabusForm");
     if (formEl) {
         renderLiveDocumentPreview();
