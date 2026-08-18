@@ -239,6 +239,11 @@ body {
     gap: 1.25rem;
 }
 
+a.mode-card {
+    text-decoration: none;
+    color: inherit;
+}
+
 .mode-card {
     background: #FAFAFA;
     border: 2px solid var(--border);
@@ -258,7 +263,7 @@ body {
     box-shadow: 0 8px 24px rgba(106, 27, 154, 0.1);
 }
 
-.mode-card.active {
+.mode-card.active-link {
     background: rgba(106, 27, 154, 0.04);
     border-color: var(--primary);
     box-shadow: 0 8px 25px rgba(106, 27, 154, 0.12);
@@ -756,9 +761,9 @@ select {
     transition: all var(--transition-fast);
     outline: none;
     border: none;
+    text-decoration: none;
 }
 
-/* Primary Button: Solid Deep Royal Purple */
 .btn-primary {
     background-color: var(--primary);
     color: #FFFFFF;
@@ -773,7 +778,6 @@ select {
     box-shadow: 0 6px 18px rgba(106, 27, 154, 0.3);
 }
 
-/* AI Spark Action Button: High-Contrast Solid Deep Purple with Crisp Accent */
 .btn-spark {
     background-color: var(--primary);
     color: #FFFFFF;
@@ -791,7 +795,6 @@ select {
     box-shadow: 0 8px 20px rgba(106, 27, 154, 0.35);
 }
 
-/* Gold Download Button: Solid Rich Gold with Crisp White Border */
 .btn-gold-download {
     background-color: var(--gold-hover);
     color: #FFFFFF;
@@ -807,7 +810,6 @@ select {
     box-shadow: 0 8px 20px rgba(184, 134, 11, 0.4);
 }
 
-/* Secondary Button: Crisp Outline */
 .btn-secondary {
     background-color: #FFFFFF;
     border: 1.5px solid var(--primary);
@@ -820,7 +822,6 @@ select {
     color: #FFFFFF;
 }
 
-/* Danger Button */
 .btn-danger {
     background-color: #FFFFFF;
     border: 1.5px solid var(--danger);
@@ -840,7 +841,6 @@ select {
 
 .flex-end { justify-content: flex-end; }
 
-/* Submit Generate DOCX Button: Solid Deep Purple with Gold Metallic Border */
 .submit-container {
     display: flex;
     justify-content: center;
@@ -899,7 +899,6 @@ input.invalid, select.invalid, textarea.invalid {
     margin-top: 1rem;
 }
 
-/* Modal Settings */
 .modal-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;

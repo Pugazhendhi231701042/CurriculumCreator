@@ -7,12 +7,14 @@ let toastTimeout;
 function showToast(message, type = "success") {
     clearTimeout(toastTimeout);
     
-    toast.textContent = message;
-    toast.className = `toast show ${type}`;
-    
-    toastTimeout = setTimeout(() => {
-        toast.className = "toast hidden";
-    }, 4000);
+    if (toast) {
+        toast.textContent = message;
+        toast.className = `toast show ${type}`;
+        
+        toastTimeout = setTimeout(() => {
+            toast.className = "toast hidden";
+        }, 4000);
+    }
 }
 
 // ==========================================================================
@@ -46,35 +48,6 @@ function initSettingsModal() {
             renderLiveDocumentPreview();
             showToast(`Document font updated to ${selectedFont}!`, "success");
         });
-    }
-}
-
-// ==========================================================================
-// MODE SWITCHER (AI SMART PASTE vs MANUAL FORM)
-// ==========================================================================
-let currentMode = "ai";
-
-function switchMode(mode) {
-    currentMode = mode;
-    const aiView = document.getElementById("aiStudioView");
-    const manualView = document.getElementById("manualFormView");
-    const cardAI = document.getElementById("modeCardAI");
-    const cardManual = document.getElementById("modeCardManual");
-
-    if (mode === "ai") {
-        if (aiView) aiView.classList.remove("hidden");
-        if (manualView) manualView.classList.add("hidden");
-        if (cardAI) cardAI.classList.add("active");
-        if (cardManual) cardManual.classList.remove("active");
-        showToast("Switched to AI Smart Paste Studio mode.", "success");
-    } else {
-        if (aiView) aiView.classList.add("hidden");
-        if (manualView) manualView.classList.remove("hidden");
-        if (cardAI) cardAI.classList.remove("active");
-        if (cardManual) cardManual.classList.add("active");
-        
-        renderLiveDocumentPreview();
-        showToast("Switched to Manual Form Builder mode.", "success");
     }
 }
 
@@ -568,7 +541,7 @@ async function generateWordDocument() {
         docChildren.push(new Paragraph({ spacing: { before: 120, after: 120 }, children: [] }));
     }
 
-    // Objectives Table (LEFT aligned)
+    // Objectives Table
     const objectives = getListValues("objectivesContainer");
     if (objectives.length > 0) {
         addTableSpacer();
@@ -833,14 +806,14 @@ function renderLiveDocumentPreview() {
     previewContainer.style.fontFamily = `'${selectedFont}', Poppins, sans-serif`;
 
     const courseType = courseTypeSelect ? courseTypeSelect.value : "Theory";
-    const subjectCode = (document.getElementById("subjectCode").value || "").trim().toUpperCase();
-    const subjectName = (document.getElementById("subjectName").value || "").trim();
-    const category = (document.getElementById("category").value || "").trim();
-    const lValue = document.getElementById("lValue").value || "0";
-    const tValue = document.getElementById("tValue").value || "0";
-    const pValue = document.getElementById("pValue").value || "0";
-    const cValue = document.getElementById("cValue").value || "0";
-    const branches = (document.getElementById("branches").value || "").trim();
+    const subjectCode = (document.getElementById("subjectCode")?.value || "").trim().toUpperCase();
+    const subjectName = (document.getElementById("subjectName")?.value || "").trim();
+    const category = (document.getElementById("category")?.value || "").trim();
+    const lValue = document.getElementById("lValue")?.value || "0";
+    const tValue = document.getElementById("tValue")?.value || "0";
+    const pValue = document.getElementById("pValue")?.value || "0";
+    const cValue = document.getElementById("cValue")?.value || "0";
+    const branches = (document.getElementById("branches")?.value || "").trim();
 
     const objectives = getListValues("objectivesContainer");
     const outcomes = getListValues("outcomesContainer");
@@ -886,9 +859,9 @@ function renderLiveDocumentPreview() {
         let totalHrs = 0;
         for (let i = 1; i <= 5; i++) {
             const roman = getRomanNumeral(i);
-            const uTitle = (document.getElementById(`unit${i}Title`).value || "").trim();
-            const uHours = (document.getElementById(`unit${i}Hours`).value || "9").trim();
-            const uSyllabus = (document.getElementById(`unit${i}Syllabus`).value || "").trim();
+            const uTitle = (document.getElementById(`unit${i}Title`)?.value || "").trim();
+            const uHours = (document.getElementById(`unit${i}Hours`)?.value || "9").trim();
+            const uSyllabus = (document.getElementById(`unit${i}Syllabus`)?.value || "").trim();
             totalHrs += parseInt(uHours, 10) || 0;
 
             html += `
@@ -1147,7 +1120,8 @@ function handleExcelUpload(event) {
 // ==========================================================================
 function parseFullSyllabusText() {
     try {
-        const text = document.getElementById("quickPasteArea").value.trim();
+        const pasteEl = document.getElementById("quickPasteArea");
+        const text = pasteEl ? pasteEl.value.trim() : "";
         if (!text) {
             showToast("Please paste some syllabus content first.", "error");
             return;
@@ -1320,27 +1294,23 @@ function parseFullSyllabusText() {
             }
         }
 
-        if (subjectCode) {
-            document.getElementById("subjectCode").value = subjectCode;
-            document.getElementById("subjectCode").dispatchEvent(new Event("input"));
-        }
-        if (subjectName) {
-            document.getElementById("subjectName").value = subjectName;
-            document.getElementById("subjectName").dispatchEvent(new Event("input"));
-        }
-        if (category) {
-            document.getElementById("category").value = category;
-            document.getElementById("category").dispatchEvent(new Event("input"));
-        }
-        
-        document.getElementById("lValue").value = l;
-        document.getElementById("lValue").dispatchEvent(new Event("input"));
-        document.getElementById("tValue").value = t;
-        document.getElementById("tValue").dispatchEvent(new Event("input"));
-        document.getElementById("pValue").value = p;
-        document.getElementById("pValue").dispatchEvent(new Event("input"));
-        document.getElementById("cValue").value = c;
-        document.getElementById("cValue").dispatchEvent(new Event("input"));
+        const elCode = document.getElementById("subjectCode");
+        const elName = document.getElementById("subjectName");
+        const elCat = document.getElementById("category");
+        const elL = document.getElementById("lValue");
+        const elT = document.getElementById("tValue");
+        const elP = document.getElementById("pValue");
+        const elC = document.getElementById("cValue");
+        const elBranches = document.getElementById("branches");
+
+        if (elCode && subjectCode) elCode.value = subjectCode;
+        if (elName && subjectName) elName.value = subjectName;
+        if (elCat && category) elCat.value = category;
+        if (elL) elL.value = l;
+        if (elT) elT.value = t;
+        if (elP) elP.value = p;
+        if (elC) elC.value = c;
+        if (elBranches && branches) elBranches.value = branches;
 
         let detectedType = "Theory";
         if (parseInt(l, 10) > 0 && parseInt(p, 10) > 0) detectedType = "Lab Oriented Theory";
@@ -1533,4 +1503,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const btnPreviewDownload = document.getElementById("btnPreviewDownload");
     if (btnPreviewDownload) btnPreviewDownload.addEventListener("click", generateWordDocument);
+
+    // If on manual.html, auto-render live preview on load
+    const formEl = document.getElementById("syllabusForm");
+    if (formEl) {
+        renderLiveDocumentPreview();
+    }
 });
