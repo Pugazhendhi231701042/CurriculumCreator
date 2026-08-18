@@ -13,7 +13,7 @@ function showToast(message, type = "success") {
         
         toastTimeout = setTimeout(() => {
             toast.className = "toast hidden";
-        }, 4000);
+        }, 4500);
     }
 }
 
@@ -69,7 +69,7 @@ function parseRomanOrNumber(str) {
     return parseInt(s, 10) || 0;
 }
 
-// Clean bullet, box, tab, and numeric list prefixes completely
+// Clean bullet, box, tab, and numeric list prefixes completely from text
 function cleanPrefix(str) {
     if (!str) return "";
     return str.replace(/^[\u25AF\u25A0\u25A1●•\-\*\s\t]+/, "")
@@ -166,6 +166,7 @@ function createRowElement(containerId, rowCount, value = "", placeholder = "", r
     input.type = "text";
     input.className = "row-input";
     input.placeholder = placeholder;
+    // Clean bullet in input field itself
     input.value = cleanPrefix(value);
     
     if (required) {
@@ -186,6 +187,7 @@ function createRowElement(containerId, rowCount, value = "", placeholder = "", r
     });
 
     input.addEventListener("input", () => {
+        input.value = cleanPrefix(input.value);
         if (input.value.trim() !== "") {
             input.classList.remove("invalid");
             const errorSpan = row.querySelector(".error-message");
@@ -304,13 +306,15 @@ function handleCourseTypeChange() {
 
 function calculateTotalHours() {
     let total = 0;
-    hoursInputs.forEach(input => {
-        if (!input.disabled) {
-            const val = parseFloat(input.value) || 0;
+    for (let i = 1; i <= 5; i++) {
+        const uHoursEl = document.getElementById(`unit${i}Hours`);
+        if (uHoursEl && !uHoursEl.disabled) {
+            const val = parseFloat(uHoursEl.value) || 0;
             total += val;
         }
-    });
-    if (totalHoursVal) totalHoursVal.textContent = total;
+    }
+    if (totalHoursVal) totalHoursVal.textContent = total > 0 ? total : 45;
+    return total > 0 ? total : 45;
 }
 
 if (courseTypeSelect) courseTypeSelect.addEventListener("change", handleCourseTypeChange);
@@ -332,6 +336,14 @@ document.querySelectorAll("#syllabusForm input, #syllabusForm textarea, #syllabu
         renderLiveDocumentPreview();
     });
 });
+
+// Bind Branch input field for live updates
+const branchesInputEl = document.getElementById("branches");
+if (branchesInputEl) {
+    branchesInputEl.addEventListener("input", () => {
+        renderLiveDocumentPreview();
+    });
+}
 
 // ==========================================================================
 // FORM SUBMIT & DOCX GENERATION LOGIC
@@ -401,7 +413,7 @@ if (form) {
 }
 
 // ==========================================================================
-// DOCX COMPILATION USING DOCX.JS (NO ARTIFICIAL BULLETS)
+// DOCX COMPILATION USING DOCX.JS (EXPLICIT POPPINS FONT ON ALL RUNS)
 // ==========================================================================
 async function generateWordDocument() {
     if (!window.docx) {
@@ -423,6 +435,16 @@ async function generateWordDocument() {
         VerticalAlign
     } = window.docx;
 
+    // Helper to create TextRun with explicit font mandate
+    function createRun(text, bold = false, size = 24) {
+        return new TextRun({
+            text: text,
+            bold: bold,
+            size: size,
+            font: selectedFont
+        });
+    }
+
     const courseType = courseTypeSelect ? courseTypeSelect.value : "Theory";
     const subjectCode = (document.getElementById("subjectCode")?.value || "").trim().toUpperCase();
     const subjectName = (document.getElementById("subjectName")?.value || "").trim();
@@ -431,7 +453,7 @@ async function generateWordDocument() {
     const tValue = document.getElementById("tValue")?.value || "0";
     const pValue = document.getElementById("pValue")?.value || "0";
     const cValue = document.getElementById("cValue")?.value || "0";
-    const branches = (document.getElementById("branches")?.value || "").trim();
+    const branches = (document.getElementById("branches")?.value || "").trim() || "Common to All Branches";
 
     const cellMargins = { top: 120, bottom: 120, left: 144, right: 144 };
     const tableBorders = {
@@ -445,7 +467,7 @@ async function generateWordDocument() {
 
     const docChildren = [];
 
-    // Table 1: Course Details (Subject Title CENTER aligned)
+    // Table 1: Course Details (Subject Title CENTER aligned with Poppins Font)
     const basicInfoTable = new Table({
         width: { size: 10204, type: WidthType.DXA },
         borders: tableBorders,
@@ -453,31 +475,31 @@ async function generateWordDocument() {
             new TableRow({
                 children: [
                     new TableCell({
-                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Course Code", bold: true, size: 24 })] })],
+                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [createRun("Course Code", true)] })],
                         verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 1701, type: WidthType.DXA }
                     }),
                     new TableCell({
-                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Course Title", bold: true, size: 24 })] })],
+                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [createRun("Course Title", true)] })],
                         verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 4818, type: WidthType.DXA }
                     }),
                     new TableCell({
-                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Category", bold: true, size: 24 })] })],
+                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [createRun("Category", true)] })],
                         verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 1417, type: WidthType.DXA }
                     }),
                     new TableCell({
-                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "L", bold: true, size: 24 })] })],
+                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [createRun("L", true)] })],
                         verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 567, type: WidthType.DXA }
                     }),
                     new TableCell({
-                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "T", bold: true, size: 24 })] })],
+                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [createRun("T", true)] })],
                         verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 567, type: WidthType.DXA }
                     }),
                     new TableCell({
-                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "P", bold: true, size: 24 })] })],
+                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [createRun("P", true)] })],
                         verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 567, type: WidthType.DXA }
                     }),
                     new TableCell({
-                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "C", bold: true, size: 24 })] })],
+                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [createRun("C", true)] })],
                         verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 567, type: WidthType.DXA }
                     })
                 ]
@@ -485,31 +507,31 @@ async function generateWordDocument() {
             new TableRow({
                 children: [
                     new TableCell({
-                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: subjectCode, size: 24 })] })],
+                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [createRun(subjectCode, false)] })],
                         verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 1701, type: WidthType.DXA }
                     }),
                     new TableCell({
-                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: subjectName, bold: true, size: 24 })] })],
+                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [createRun(subjectName, true)] })],
                         verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 4818, type: WidthType.DXA }
                     }),
                     new TableCell({
-                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: category, size: 24 })] })],
+                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [createRun(category, false)] })],
                         verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 1417, type: WidthType.DXA }
                     }),
                     new TableCell({
-                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: lValue, size: 24 })] })],
+                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [createRun(lValue, false)] })],
                         verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 567, type: WidthType.DXA }
                     }),
                     new TableCell({
-                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: tValue, size: 24 })] })],
+                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [createRun(tValue, false)] })],
                         verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 567, type: WidthType.DXA }
                     }),
                     new TableCell({
-                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: pValue, size: 24 })] })],
+                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [createRun(pValue, false)] })],
                         verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 567, type: WidthType.DXA }
                     }),
                     new TableCell({
-                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: cValue, size: 24 })] })],
+                        children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [createRun(cValue, false)] })],
                         verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 567, type: WidthType.DXA }
                     })
                 ]
@@ -520,8 +542,8 @@ async function generateWordDocument() {
                         children: [new Paragraph({
                             alignment: AlignmentType.LEFT,
                             children: [
-                                new TextRun({ text: "Branches: ", bold: true, size: 24 }),
-                                new TextRun({ text: branches, size: 24 })
+                                createRun("Branches: ", true),
+                                createRun(branches, false)
                             ]
                         })],
                         columnSpan: 7, verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 10204, type: WidthType.DXA }
@@ -537,7 +559,7 @@ async function generateWordDocument() {
         docChildren.push(new Paragraph({ spacing: { before: 120, after: 120 }, children: [] }));
     }
 
-    // Objectives Table (No artificial bullets)
+    // Objectives Table
     const objectives = getListValues("objectivesContainer");
     if (objectives.length > 0) {
         addTableSpacer();
@@ -545,7 +567,7 @@ async function generateWordDocument() {
             new TableRow({
                 children: [
                     new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: "Objectives:", bold: true, size: 24 })], alignment: AlignmentType.LEFT })],
+                        children: [new Paragraph({ children: [createRun("Objectives:", true)], alignment: AlignmentType.LEFT })],
                         margins: cellMargins, width: { size: 10204, type: WidthType.DXA }
                     })
                 ]
@@ -555,7 +577,7 @@ async function generateWordDocument() {
             objectiveRows.push(new TableRow({
                 children: [
                     new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: cleanPrefix(obj), size: 24 })], alignment: AlignmentType.LEFT })],
+                        children: [new Paragraph({ children: [createRun(cleanPrefix(obj), false)], alignment: AlignmentType.LEFT })],
                         margins: cellMargins, width: { size: 10204, type: WidthType.DXA }
                     })
                 ]
@@ -564,10 +586,12 @@ async function generateWordDocument() {
         docChildren.push(new Table({ width: { size: 10204, type: WidthType.DXA }, borders: tableBorders, rows: objectiveRows }));
     }
 
-    // Theory Syllabus Units Table
+    // Theory Syllabus Units Table (With Total Hours Calculation Fix)
     if (courseType === "Theory" || courseType === "Lab Oriented Theory") {
         addTableSpacer();
         const unitTableRows = [];
+        let computedTotalHours = 0;
+
         for (let i = 1; i <= 5; i++) {
             const unitTitleEl = document.getElementById(`unit${i}Title`);
             const unitHoursEl = document.getElementById(`unit${i}Hours`);
@@ -578,18 +602,21 @@ async function generateWordDocument() {
             const rawSyllabus = unitSyllabusEl ? unitSyllabusEl.value.trim() : "";
             const roman = getRomanNumeral(i);
             
+            const hoursNum = parseInt(unitHours, 10) || 0;
+            computedTotalHours += hoursNum;
+
             unitTableRows.push(new TableRow({
                 children: [
                     new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: `UNIT-${roman}`, bold: true, size: 24 })] })],
+                        children: [new Paragraph({ children: [createRun(`UNIT-${roman}`, true)] })],
                         verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 1304, type: WidthType.DXA }
                     }),
                     new TableCell({
-                        children: [new Paragraph({ alignment: AlignmentType.LEFT, children: [new TextRun({ text: unitTitle.toUpperCase(), bold: true, size: 24 })] })],
+                        children: [new Paragraph({ alignment: AlignmentType.LEFT, children: [createRun(unitTitle.toUpperCase(), true)] })],
                         verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 8050, type: WidthType.DXA }
                     }),
                     new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: unitHours, bold: true, size: 24 })], alignment: AlignmentType.RIGHT })],
+                        children: [new Paragraph({ children: [createRun(unitHours, true)], alignment: AlignmentType.RIGHT })],
                         verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 850, type: WidthType.DXA }
                     })
                 ]
@@ -597,7 +624,7 @@ async function generateWordDocument() {
 
             const cleanedSyllabus = rawSyllabus.split(/\r?\n/).map(l => l.trim()).filter(Boolean).join(" ").replace(/\s+/g, " ");
             const syllabusParagraphs = [
-                new Paragraph({ children: [new TextRun({ text: cleanedSyllabus, size: 24 })], alignment: AlignmentType.JUSTIFIED })
+                new Paragraph({ children: [createRun(cleanedSyllabus, false)], alignment: AlignmentType.JUSTIFIED })
             ];
 
             unitTableRows.push(new TableRow({
@@ -607,13 +634,15 @@ async function generateWordDocument() {
             }));
         }
 
+        if (computedTotalHours === 0) computedTotalHours = 45;
+
         unitTableRows.push(new TableRow({
             children: [
                 new TableCell({
                     children: [new Paragraph({
                         children: [
-                            new TextRun({ text: "Total Contact Hours: ", bold: true, size: 24 }),
-                            new TextRun({ text: totalHoursVal ? totalHoursVal.textContent : "45", size: 24 })
+                            createRun("Total Contact Hours: ", true),
+                            createRun(computedTotalHours.toString(), false)
                         ],
                         alignment: AlignmentType.LEFT
                     })],
@@ -634,7 +663,7 @@ async function generateWordDocument() {
                 new TableRow({
                     children: [
                         new TableCell({
-                            children: [new Paragraph({ children: [new TextRun({ text: "LIST OF EXPERIMENTS", bold: true, size: 24 })], alignment: AlignmentType.LEFT })],
+                            children: [new Paragraph({ children: [createRun("LIST OF EXPERIMENTS", true)], alignment: AlignmentType.LEFT })],
                             columnSpan: 2, margins: cellMargins, width: { size: 10204, type: WidthType.DXA }
                         })
                     ]
@@ -645,11 +674,11 @@ async function generateWordDocument() {
                 experimentRows.push(new TableRow({
                     children: [
                         new TableCell({
-                            children: [new Paragraph({ children: [new TextRun({ text: (idx + 1).toString(), bold: true, size: 24 })], alignment: AlignmentType.CENTER })],
+                            children: [new Paragraph({ children: [createRun((idx + 1).toString(), true)], alignment: AlignmentType.CENTER })],
                             verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 567, type: WidthType.DXA }
                         }),
                         new TableCell({
-                            children: [new Paragraph({ children: [new TextRun({ text: cleanPrefix(exp), size: 24 })], alignment: AlignmentType.LEFT })],
+                            children: [new Paragraph({ children: [createRun(cleanPrefix(exp), false)], alignment: AlignmentType.LEFT })],
                             verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 9637, type: WidthType.DXA }
                         })
                     ]
@@ -660,7 +689,7 @@ async function generateWordDocument() {
         }
     }
 
-    // Course Outcomes Table (No artificial bullets)
+    // Course Outcomes Table
     const outcomes = getListValues("outcomesContainer");
     if (outcomes.length > 0) {
         addTableSpacer();
@@ -668,7 +697,7 @@ async function generateWordDocument() {
             new TableRow({
                 children: [
                     new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: "Course Outcomes:", bold: true, size: 24 })], alignment: AlignmentType.LEFT })],
+                        children: [new Paragraph({ children: [createRun("Course Outcomes:", true)], alignment: AlignmentType.LEFT })],
                         margins: cellMargins, width: { size: 10204, type: WidthType.DXA }
                     })
                 ]
@@ -676,7 +705,7 @@ async function generateWordDocument() {
             new TableRow({
                 children: [
                     new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: "On completion of the course, students will be able to", size: 24 })], alignment: AlignmentType.LEFT })],
+                        children: [new Paragraph({ children: [createRun("On completion of the course, students will be able to", false)], alignment: AlignmentType.LEFT })],
                         margins: cellMargins, width: { size: 10204, type: WidthType.DXA }
                     })
                 ]
@@ -687,7 +716,7 @@ async function generateWordDocument() {
             outcomeRows.push(new TableRow({
                 children: [
                     new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: cleanPrefix(out), size: 24 })], alignment: AlignmentType.LEFT })],
+                        children: [new Paragraph({ children: [createRun(cleanPrefix(out), false)], alignment: AlignmentType.LEFT })],
                         margins: cellMargins, width: { size: 10204, type: WidthType.DXA }
                     })
                 ]
@@ -707,7 +736,7 @@ async function generateWordDocument() {
             bookTableRows.push(new TableRow({
                 children: [
                     new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: "Text Books:", bold: true, size: 24 })], alignment: AlignmentType.LEFT })],
+                        children: [new Paragraph({ children: [createRun("Text Books:", true)], alignment: AlignmentType.LEFT })],
                         columnSpan: 2, margins: cellMargins, width: { size: 10204, type: WidthType.DXA }
                     })
                 ]
@@ -716,11 +745,11 @@ async function generateWordDocument() {
                 bookTableRows.push(new TableRow({
                     children: [
                         new TableCell({
-                            children: [new Paragraph({ children: [new TextRun({ text: (idx + 1).toString(), bold: true, size: 24 })], alignment: AlignmentType.CENTER })],
+                            children: [new Paragraph({ children: [createRun((idx + 1).toString(), true)], alignment: AlignmentType.CENTER })],
                             verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 567, type: WidthType.DXA }
                         }),
                         new TableCell({
-                            children: [new Paragraph({ children: [new TextRun({ text: cleanPrefix(tb), size: 24 })], alignment: AlignmentType.LEFT })],
+                            children: [new Paragraph({ children: [createRun(cleanPrefix(tb), false)], alignment: AlignmentType.LEFT })],
                             verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 9637, type: WidthType.DXA }
                         })
                     ]
@@ -732,7 +761,7 @@ async function generateWordDocument() {
             bookTableRows.push(new TableRow({
                 children: [
                     new TableCell({
-                        children: [new Paragraph({ children: [new TextRun({ text: "Reference Books(s) / Web links:", bold: true, size: 24 })], alignment: AlignmentType.LEFT })],
+                        children: [new Paragraph({ children: [createRun("Reference Books(s) / Web links:", true)], alignment: AlignmentType.LEFT })],
                         columnSpan: 2, margins: cellMargins, width: { size: 10204, type: WidthType.DXA }
                     })
                 ]
@@ -741,11 +770,11 @@ async function generateWordDocument() {
                 bookTableRows.push(new TableRow({
                     children: [
                         new TableCell({
-                            children: [new Paragraph({ children: [new TextRun({ text: (idx + 1).toString(), bold: true, size: 24 })], alignment: AlignmentType.CENTER })],
+                            children: [new Paragraph({ children: [createRun((idx + 1).toString(), true)], alignment: AlignmentType.CENTER })],
                             verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 567, type: WidthType.DXA }
                         }),
                         new TableCell({
-                            children: [new Paragraph({ children: [new TextRun({ text: cleanPrefix(ref), size: 24 })], alignment: AlignmentType.LEFT })],
+                            children: [new Paragraph({ children: [createRun(cleanPrefix(ref), false)], alignment: AlignmentType.LEFT })],
                             verticalAlign: VerticalAlign.CENTER, margins: cellMargins, width: { size: 9637, type: WidthType.DXA }
                         })
                     ]
@@ -788,7 +817,7 @@ async function generateWordDocument() {
 }
 
 // ==========================================================================
-// RENDER LIVE DOCUMENT PREVIEW (NO ARTIFICIAL BULLETS)
+// RENDER LIVE DOCUMENT PREVIEW (Matching Word DOCX layout & Font Settings)
 // ==========================================================================
 function renderLiveDocumentPreview() {
     const previewContainer = document.getElementById("documentPreview");
@@ -806,7 +835,7 @@ function renderLiveDocumentPreview() {
     const tValue = document.getElementById("tValue")?.value || "0";
     const pValue = document.getElementById("pValue")?.value || "0";
     const cValue = document.getElementById("cValue")?.value || "0";
-    const branches = (document.getElementById("branches")?.value || "").trim();
+    const branches = (document.getElementById("branches")?.value || "").trim() || "Common to All Branches";
 
     const objectives = getListValues("objectivesContainer");
     const outcomes = getListValues("outcomesContainer");
@@ -834,7 +863,7 @@ function renderLiveDocumentPreview() {
                 <td style="text-align: center;">${pValue}</td>
                 <td style="text-align: center;">${cValue}</td>
             </tr>
-            ${branches ? `<tr><td colspan="7"><strong>Branches:</strong> ${branches}</td></tr>` : ''}
+            <tr><td colspan="7"><strong>Branches:</strong> ${branches}</td></tr>
         </table>
     `;
 
@@ -849,13 +878,13 @@ function renderLiveDocumentPreview() {
 
     if (courseType === "Theory" || courseType === "Lab Oriented Theory") {
         html += `<table>`;
-        let totalHrs = 0;
+        let computedHrs = 0;
         for (let i = 1; i <= 5; i++) {
             const roman = getRomanNumeral(i);
             const uTitle = (document.getElementById(`unit${i}Title`)?.value || "").trim();
             const uHours = (document.getElementById(`unit${i}Hours`)?.value || "9").trim();
             const rawSyllabus = (document.getElementById(`unit${i}Syllabus`)?.value || "").trim();
-            totalHrs += parseInt(uHours, 10) || 0;
+            computedHrs += parseInt(uHours, 10) || 0;
 
             const cleanedSyllabus = rawSyllabus.split(/\r?\n/).map(l => l.trim()).filter(Boolean).join(" ").replace(/\s+/g, " ");
 
@@ -870,9 +899,10 @@ function renderLiveDocumentPreview() {
                 </tr>
             `;
         }
+        if (computedHrs === 0) computedHrs = 45;
         html += `
             <tr>
-                <td colspan="3"><strong>Total Contact Hours: ${totalHrs}</strong></td>
+                <td colspan="3"><strong>Total Contact Hours: ${computedHrs}</strong></td>
             </tr>
         </table>`;
     }
@@ -1335,7 +1365,14 @@ function parseFullSyllabusText() {
         if (elT) elT.value = t;
         if (elP) elP.value = p;
         if (elC) elC.value = c;
-        if (elBranches && branches) elBranches.value = branches;
+        
+        if (elBranches) {
+            if (branches) {
+                elBranches.value = branches;
+            } else if (!elBranches.value.trim()) {
+                elBranches.value = "Common to All Branches";
+            }
+        }
 
         let detectedType = "Theory";
         if (parseInt(l, 10) > 0 && parseInt(p, 10) > 0) detectedType = "Lab Oriented Theory";
@@ -1354,7 +1391,7 @@ function parseFullSyllabusText() {
             const syllabusTextarea = document.getElementById(`unit${i}Syllabus`);
             
             if (u.title && titleInput) {
-                titleInput.value = u.title;
+                titleInput.value = cleanPrefix(u.title);
                 filledUnits++;
             }
             if (u.hours && hoursInput) {
@@ -1382,6 +1419,7 @@ function parseFullSyllabusText() {
                 <span class="stat-chip">Subject Code: <strong>${subjectCode || 'HS19151'}</strong></span>
                 <span class="stat-chip">Subject Name: <strong>${subjectName || 'TECHNICAL ENGLISH'}</strong></span>
                 <span class="stat-chip">Credits: <strong>${l}-${t}-${p}-${c}</strong></span>
+                <span class="stat-chip">Branches: <strong>${elBranches ? elBranches.value : 'Common to All'}</strong></span>
                 <span class="stat-chip">Units Extracted: <strong>${filledUnits}/5</strong></span>
                 <span class="stat-chip">Objectives: <strong>${objectives.length}</strong></span>
                 <span class="stat-chip">Outcomes: <strong>${outcomes.length}</strong></span>
@@ -1391,7 +1429,11 @@ function parseFullSyllabusText() {
             parserFeedback.classList.remove("hidden");
         }
 
-        showToast(`Successfully extracted ${references.length} reference books, ${outcomes.length} outcomes, and syllabus units!`, "success");
+        if (!branches && elBranches) {
+            showToast("Branch details not specified in text. Set to 'Common to All Branches' by default.", "info");
+        } else {
+            showToast(`Successfully extracted ${references.length} reference books, ${outcomes.length} outcomes, and syllabus units!`, "success");
+        }
     } catch (err) {
         console.error("Syllabus parser error:", err);
         showToast(`Failed to parse text: ${err.message}`, "error");

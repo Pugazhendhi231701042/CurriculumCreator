@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Custom Stylesheet -->
-    <link rel="stylesheet" href="./styles.css?v=20260818_v11">
+    <link rel="stylesheet" href="./styles.css?v=20260818_v12">
     <!-- docx.js Library -->
     <script src="https://cdn.jsdelivr.net/npm/docx@8.2.4/build/index.iife.js"></script>
     <!-- SheetJS Library -->
@@ -59,10 +59,17 @@
                 <div class="parser-body">
                     <div class="form-group">
                         <label for="quickPasteArea">Raw Syllabus Content</label>
-                        <textarea id="quickPasteArea" rows="12" placeholder="Paste your raw course content here (Subject Code, Title, L-T-P-C, Objectives, Units, Outcomes, Books, etc.)..."></textarea>
+                        <textarea id="quickPasteArea" rows="10" placeholder="Paste your raw course content here (Subject Code, Title, L-T-P-C, Objectives, Units, Outcomes, Books, etc.)..."></textarea>
+                    </div>
+
+                    <!-- VISIBLE BRANCH / DEPARTMENT FIELD IN AI MODE -->
+                    <div class="form-group" style="margin-top: 1rem;">
+                        <label for="branches">Branch(es) / Department <span class="required">*</span></label>
+                        <input type="text" id="branches" placeholder="e.g. Common to All Branches, CSE, ECE, IT...">
+                        <span class="helper-text">If not detected in raw text, please specify the target branch/department here.</span>
                     </div>
                     
-                    <div class="parser-actions">
+                    <div class="parser-actions" style="margin-top: 1.25rem;">
                         <button type="button" class="btn btn-secondary" id="btnLoadSample">
                             <span class="icon">📝</span> Load Sample Technical English Syllabus
                         </button>
@@ -94,7 +101,6 @@
                 <input type="number" id="tValue" value="0">
                 <input type="number" id="pValue" value="0">
                 <input type="number" id="cValue" value="3">
-                <input type="text" id="branches">
                 <select id="courseType"><option value="Theory">Theory</option><option value="Lab">Lab</option><option value="Lab Oriented Theory">Lab Oriented Theory</option></select>
                 <div id="objectivesContainer"></div>
                 <div id="outcomesContainer"></div>
@@ -167,6 +173,6 @@
     <!-- Notification Toast -->
     <div id="toast" class="toast hidden"></div>
 
-    <script src="./app.js?v=20260818_v11"></script>
+    <script src="./app.js?v=20260818_v12"></script>
 </body>
 </html>
